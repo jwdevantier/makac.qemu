@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
-<!-- SPDX-License-Identifier: BSD-2-Clause -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
 
 # `qemu:loadvm`
 
@@ -39,14 +39,35 @@ Same as [`qemu:vm`](vm.md): `handle`, `target?`, `pid`, status fields.
   of the VM it was saved from. Resume on that same run dir, and
   `qemu:loadvm` **keeps the existing overlay** rather than recreating it —
   recreating would destroy the snapshot.
-- **Caller supplies `args`.** Resuming requires the machine configuration
-  the snapshot was taken with; the image records state, not configuration.
-  Control interfaces (pidfile, sockets, serial log) are exempt and may
+
+- **Idempotence = invocation identity.** At launch the package writes the
+  canonical invocation — `qemu_bin`, the flattened `args`, and the
+  `-loadvm <tag>` it appends — to `<run_dir>/invocation`. Every
+  `state = "started"` request against an *already-running* VM byte-compares
+  the requested invocation against that file:
+  - **identical → no-op.** The VM is already running exactly what was asked
+    for; the step returns the handle with `changed = false` (ssh target
+    still set up). This is what makes `loadvm` idempotent: the step is
+    safe to re-run — "ensure the VM is running from snapshot X".
+  - **different → step failure.** The VM is running a *different*
+    invocation (other args, other tag, or a plain boot); the failure
+    names the difference and points at `state = "restarted"`. Nothing is
+    silently re-launched underneath a running VM.
+
+- **The tag is part of the identity.** "Same VM, new tag" is a different
+  invocation, so `state = "started"` against a VM already running from
+  another tag fails instead of quietly resuming the new one. Switching
+  snapshots (or switching a running VM to a plain boot and back) is
+  spelled `state = "restarted"` — stop unconditionally, then resume.
+
+- **Caller supplies `args`.** The snapshot records guest state (RAM,
+  devices) in the image — not the QEMU command line; there is nothing in
+  the image to recover the machine config from. The `args` you pass are
+  part of the identity, compared byte-for-byte (after flattening and
+  `{{ disk }}` substitution). Only the package-injected control wiring —
+  pidfile, monitor/serial/qmp sockets — is outside the identity and may
   differ freely.
-- **Idempotence.** `state = "started"` on a running VM is a no-op as with
-  `qemu:vm`. The canonical invocation includes the snapshot tag, so "same
-  VM, new tag" is a *different* invocation — spell it `state =
-  "restarted"`.
+
 - A tag not present in the image fails at launch: QEMU exits early, and the
   step failure quotes the qemu-stderr log.
 
