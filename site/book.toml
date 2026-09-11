@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier
+# SPDX-License-Identifier: BSD-2-Clause
+[book]
+title = "makac.qemu"
+authors = ["Jesper Wendel Devantier"]
+language = "en"
+
+[output.html]
+site-url = "https://jwdevantier.github.io/makac.qemu/"
+git-repository-url = "https://github.com/jwdevantier/makac.qemu"
