@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
-<!-- SPDX-License-Identifier: BSD-2-Clause -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
 
 # `qemu:savevm`
 
