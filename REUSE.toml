@@ -1,0 +1,7 @@
+version = 1
+
+[[annotations]]
+path = ["makac.lua", "lib/*.lua"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Jesper Wendel Devantier"
+SPDX-License-Identifier = "BSD-2-Clause"
