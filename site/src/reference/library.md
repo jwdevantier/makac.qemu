@@ -23,6 +23,10 @@ qmp.bdev_add(node, driver, args)   -- blockdev-add, node-name/driver injected
 qmp.hmp("savevm my-snapshot")      -- human-monitor-command
 qmp.query_status()                 -- { execute = "query-status" }
 
+qmp.merge(tables)             -- shallow-merge an array of tables into a
+                              -- fresh one; later sources win — the utility
+                              -- the constructors are built on
+
 qmp.ok(result)                -- result.error == nil
 qmp.err_desc(result)          -- the error description, or nil
 ```

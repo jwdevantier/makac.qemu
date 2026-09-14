@@ -35,7 +35,8 @@ out = {
   commands are not sent), message naming the command and QMP's `desc`.
   `"collect"`: execution continues; failures land in
   `out.results[i].error`.
-- A VM whose QMP socket doesn't connect is a step failure naming the handle.
+- A VM whose QMP socket doesn't connect is a step failure naming the VM
+  and its socket.
 - Sending discards the event buffer (see Concepts: QMP).
 
 `changed` is always `true`.
@@ -53,15 +54,17 @@ with = {
 
 ```lua
 out = {
-    events = {               -- the events drained during this poll
+    events = {               -- the VM's pending events after the drain
         { name = "DEVICE_DELETED", data = { ... } },
     },
 }
 ```
 
 A timeout is **not** an error — the action returns with whatever arrived.
-The drained events also remain in the buffer; discard them with `consume`
-once treated.
+`out.events` is the VM's **pending events** — the whole buffer after the
+drain, including events that arrived while an earlier `send` awaited its
+replies. They remain in the buffer: what the step shows is exactly what a
+matching `consume(n)` discards.
 
 `changed` is always `false` (polling changes nothing).
 

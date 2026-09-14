@@ -79,8 +79,10 @@ step {
 The discipline:
 
 - `poll` drains the socket (bounded by `timeout_s`; a timeout is **not** an
-  error — it returns with what arrived). The drained events are returned in
-  `out.events` **and remain in the buffer**.
+  error — it returns with what arrived). `out.events` is the VM's **pending
+  events** — the whole buffer after the drain, including events that arrived
+  while an earlier `send` awaited its replies. They **remain in the buffer**:
+  what a poll shows is exactly what a matching `consume(n)` discards.
 - `consume` discards the `n` oldest buffered events — the ones the workflow
   has finished treating (it knows their count from a poll).
 - `send` discards the buffer at the moment it issues its commands.
@@ -131,12 +133,15 @@ Constructors:
 | `qmp.bdev_add(node, driver, args)` | `blockdev-add` with `node-name`/`driver` injected |
 | `qmp.hmp("savevm mysnapshot")` | `human-monitor-command` |
 | `qmp.query_status()` | `query-status` |
+| `qmp.merge(tables)` | a fresh shallow merge of the tables (later sources win) |
 | `qmp.ok(result)` | `result.error == nil` |
 | `qmp.err_desc(result)` | the error description |
 
 Because they are pure table-builders they compose with ordinary Lua
 (merging, loops, conditionals), and the same command table can be sent to
-any number of VMs by any number of `qemu:qmp/send` steps.
+any number of VMs by any number of `qemu:qmp/send` steps. The `merge` the
+constructors are built on is exposed too, for compositions that reuse it
+for their own option tables.
 
 ## Hotplug notes
 
