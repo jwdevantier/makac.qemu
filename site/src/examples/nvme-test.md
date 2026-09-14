@@ -64,7 +64,7 @@ local base = step {
     name = "boot base VM",
     uses = "qemu:vm",
     with = {
-        name = "testvm", state = "started", qemu_bin = QEMU,
+        vm = "testvm", state = "started", qemu_bin = QEMU,
         disk = { backing = base_img.out.path },
         args = base_args,
         ssh  = { port = 2090 },
@@ -79,7 +79,7 @@ local snap = step {
 
 step { -- the base VM has done its work; its snapshot is in the image
     uses = "qemu:vm",
-    with = { name = "testvm", state = "stopped" },
+    with = { vm = "testvm", state = "stopped" },
 }
 ```
 
@@ -91,7 +91,7 @@ local function run_test(test_name, test_args)
         name = "resume for test " .. test_name,
         uses = "qemu:loadvm",
         with = {
-            name = "testvm",       -- same run dir the snapshot was taken on
+            vm = "testvm",           -- same run dir the snapshot was taken on
             qemu_bin = QEMU,
             args = base_args,
             snapshot = snap.out.snapshot,      -- -loadvm base_snapshot
@@ -151,7 +151,7 @@ local function run_test(test_name, test_args)
     step { uses = "qemu:qmp/consume",
            with = { vm = vm.out.handle, n = #p.out.events } }
 
-    step { uses = "qemu:vm", with = { name = "testvm", state = "stopped" } }
+    step { uses = "qemu:vm", with = { vm = "testvm", state = "stopped" } }
 end
 
 run_test("nvme-4k", { "/tmp/tp4176.test" })

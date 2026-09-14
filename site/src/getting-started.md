@@ -106,7 +106,7 @@ wedges:
 ```lua
 step {
     uses = "qemu:vm",
-    with = { name = "testvm", state = "stopped" },
+    with = { vm = "testvm", state = "stopped" },
 }
 ```
 

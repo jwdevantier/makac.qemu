@@ -10,8 +10,8 @@ workhorse action of the package.
 
 ```lua
 with = {
-    name = "testvm",                 -- identity: a VM name
-    -- handle = vm.out.handle,       -- ...or a previous handle (never both)
+    vm = "testvm",                  -- identity: a VM name or a previous
+                                    -- out.handle (one key, either value)
     state = "started",               -- "started" (default) | "stopped" | "restarted"
 
     -- required for "started"/"restarted":

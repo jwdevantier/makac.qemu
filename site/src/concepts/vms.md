@@ -147,7 +147,9 @@ value.
 ## Status
 
 A VM's status is defined by a probe: QMP first (`query-status`), then the
-pidfile. The probe result is available in `qemu:vm`'s `out`:
+pidfile. The probe result is available in `qemu:vm`'s `out` — and as the
+output of the read-only [`qemu:probe`](../reference/probe.md) action, for
+workflow policy like "already up → no-op":
 
 ```lua
 {

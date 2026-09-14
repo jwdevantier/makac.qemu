@@ -13,6 +13,7 @@
 - [Reference](reference/index.md)
   - [Actions at a glance](reference/actions.md)
   - [`qemu:vm`](reference/vm.md)
+  - [`qemu:probe`](reference/probe.md)
   - [`qemu:loadvm`](reference/loadvm.md)
   - [`qemu:savevm`](reference/savevm.md)
   - [`qemu:qmp/send`, `poll`, `consume`](reference/qmp.md)

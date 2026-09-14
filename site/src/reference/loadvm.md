@@ -12,7 +12,7 @@ resumes where it was captured instead of booting.
 
 ```lua
 with = {
-    name = "testvm",                 -- identity (name or handle)
+    vm = "testvm",                  -- identity: a VM name or a handle
     state = "started",               -- "started" (default) | "restarted"
     snapshot = "ready-state",        -- required: the tag from qemu:savevm
 

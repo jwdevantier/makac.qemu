@@ -65,7 +65,7 @@ local snap = step {
     with = { vm = vm.out.handle, tag = "base" },
 }
 
-step { uses = "qemu:vm", with = { name = "testvm", state = "stopped" } }
+step { uses = "qemu:vm", with = { vm = "testvm", state = "stopped" } }
 ```
 
 Build an image, boot the VM onto a throwaway overlay of it, snapshot the
