@@ -97,14 +97,15 @@ end
 --     error`). A FAILED job passes through `aborting` before `concluded`
 --     (running → aborting → concluded; success is waiting → pending →
 --     concluded — no aborting, observed live on qemu 10.2).
---   * events can be MISSED: the QMP client's send() buffers events it
---     reads while awaiting a reply, and poll() only surfaces events
---     drained during the poll call itself (qmp/qmp.odin) — a job event
---     landing in a send's read window never reaches our poll loop.
---     Hence every ~10 polls we ask query-jobs directly; the job row
---     exists the whole time (snapshot jobs are JOB_MANUAL_DISMISS, so a
---     concluded job stays listed until dismissed — `null` need not be
---     awaited).
+--   * the loop reads the WHOLE buffer each round (the client's events(),
+--     which does not consume): events that landed in a send's read window
+--     sit in the buffer too, so they reach the loop on the next round
+--     rather than being missed (a send's clear happens before ITS read
+--     window, and every round reads before the next send). Every ~10
+--     rounds we still ask query-jobs directly — ground truth regardless
+--     of event delivery; the job row exists the whole time (snapshot jobs
+--     are JOB_MANUAL_DISMISS, so a concluded job stays listed until
+--     dismissed — `null` need not be awaited).
 --   * once concluded-without-error is confirmed we job-dismiss (best
 --     effort) so the row doesn't linger and future savevm job-ids can
 --     repeat (a leftover concluded job makes the next savevm with the
@@ -159,8 +160,17 @@ local function wait_for_job(client, h, job_id, action, timeout_s)
 	end
 
 	while true do
-		local ok, events = pcall(client.poll, client, { timeout_s = 1 })
+		local ok, e = pcall(client.poll, client, { timeout_s = 1 })
 		if not ok then
+			error(("qemu:%s: VM '%s': waiting for snapshot job '%s': %s")
+				:format(action, h.name, job_id, tostring(e)), 0)
+		end
+		-- read the whole buffer every round (not only fresh events):
+		-- send-window events sit in it as well, and reading does not
+		-- consume. Re-scanning rounds is harmless: saw_aborting is sticky
+		-- and a concluded job finishes (idempotently) again.
+		local ok2, events = pcall(client.events, client)
+		if not ok2 then
 			error(("qemu:%s: VM '%s': waiting for snapshot job '%s': %s")
 				:format(action, h.name, job_id, tostring(events)), 0)
 		end
@@ -178,7 +188,7 @@ local function wait_for_job(client, h, job_id, action, timeout_s)
 				end
 			end
 		end
-		-- missed-event fallback: ask ground truth every ~10 polls
+		-- ground-truth fallback: ask query-jobs directly every ~10 rounds
 		polls = polls + 1
 		if polls % 10 == 0 then
 			local done, jerr = check_jobs()

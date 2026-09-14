@@ -2,7 +2,9 @@
 -- actions (design2/qmp.md). Thin wrappers over the makac.qmp_open client
 -- binding (vm/qmp.odin); the binding already carries the semantics these
 -- actions rely on: send clears the event buffer when it issues commands,
--- poll returns events drained during the call (they stay buffered),
+-- poll drains the socket into the buffer and reports whether anything
+-- arrived (a timeout is not an error), events(n?) reads the first n buffered
+-- events — all of them when n is omitted, reading does not consume — and
 -- consume drops the n oldest buffered events and raises when n exceeds the
 -- buffered count.
 --
@@ -111,16 +113,21 @@ end
 
 -- qemu:qmp/poll — drain pending events on the VM's connection, bounded by
 -- `with.timeout_s` (default 0; a timeout is NOT an error — the action
--- returns with whatever arrived). The drained events are returned in
--- out.events AND remain in the VM's buffer (drop them with
--- qemu:qmp/consume once treated).
+-- returns with whatever arrived). out.events is the VM's PENDING events —
+-- the whole buffer after the drain — and they REMAIN buffered (drop them
+-- with qemu:qmp/consume once treated). What the step shows is exactly what
+-- a matching consume(n) discards.
 function M.poll(with)
 	with = with or {}
 	local timeout_s = check_timeout_s("qmp/poll", with.timeout_s) or 0
 
 	local client, h = connection("qmp/poll", with)
-	local ok, events = pcall(client.poll, client, { timeout_s = timeout_s })
+	local ok, e = pcall(client.poll, client, { timeout_s = timeout_s })
 	if not ok then
+		error(("qemu:qmp/poll: VM '%s': %s"):format(h.name, tostring(e)), 0)
+	end
+	local ok2, events = pcall(client.events, client)
+	if not ok2 then
 		error(("qemu:qmp/poll: VM '%s': %s"):format(h.name, tostring(events)), 0)
 	end
 	return { out = { events = events } }
