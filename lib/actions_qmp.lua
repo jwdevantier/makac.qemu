@@ -1,5 +1,5 @@
 -- pkgs:qemu/actions_qmp — internal implementations of the qemu:qmp/*
--- actions (design2/qmp.md). Thin wrappers over the makac.qmp_open client
+-- actions (design/qmp.md). Thin wrappers over the makac.qmp_open client
 -- binding (vm/qmp.odin); the binding already carries the semantics these
 -- actions rely on: send clears the event buffer when it issues commands,
 -- poll drains the socket into the buffer and reports whether anything

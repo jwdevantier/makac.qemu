@@ -1,5 +1,5 @@
 -- pkgs:qemu/img — image specs, builder registry, env assembly, manifest
--- caching and the qemu:img action core (design2/images.md).
+-- caching and the qemu:img action core (design/images.md).
 --
 -- An *image* is a disk-image artifact built from a spec and cached by
 -- hashes (manifests) of its inputs. A builder is a *build* function plus

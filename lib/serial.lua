@@ -1,5 +1,5 @@
 -- pkgs:qemu/serial — waiting for patterns in a VM's serial log
--- (design2/vm.md, "The serial console").
+-- (design/vm.md, "The serial console").
 --
 -- QEMU captures the guest console to a file for the VM's lifetime
 -- (`-serial file:<run_dir>/serial`, wired by qemu:vm — the handle carries

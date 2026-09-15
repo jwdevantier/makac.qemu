@@ -1,7 +1,8 @@
--- pkgs:qemu/actions_vm — internal implementation of the qemu:vm action
--- (design2/vm.md, "Start semantics"/"Stop semantics"/"SSH defaults"/
--- "The ssh target"/"Overlay boot disks"; design2/launch.md, which this
--- file follows near-verbatim).
+-- pkgs:qemu/actions_vm — internal implementations of the qemu:vm,
+-- qemu:loadvm and qemu:probe actions (design/vm.md, "Start semantics"/
+-- "Stop semantics"/"SSH defaults"/"The ssh target"/"Overlay boot disks";
+-- design/launch.md, which this file follows near-verbatim; handle.md
+-- "Status probing" for qemu:probe).
 --
 -- Choreography notes (launch.md):
 --   * detached launch: makac.spawn with stdio to FILES, never pipes; the
@@ -26,6 +27,18 @@ local LAUNCH_WINDOW_S = 5
 
 local function fail(action, fmt, ...)
 	error(("qemu:%s: " .. fmt):format(action, ...), 0)
+end
+
+-- vm_arg(action, with) -> handle: with.vm is a VM name (string) or a
+-- previous out.handle (table) — one key, either value, exactly like the
+-- qmp actions' with.vm — plus the optional with.run_dir override
+-- (handle.md's derivation rule).
+local function vm_arg(action, with)
+	local ident = with.vm
+	if ident == nil then
+		fail(action, "'with.vm' is required: a VM name (string) or a previous out.handle (table)")
+	end
+	return handlelib.resolve(ident, with.run_dir)
 end
 
 -- tail(path, n): the last n lines of a log file, for failure messages —
@@ -265,11 +278,12 @@ local function cleanup_runtime_files(h, keep_overlay)
 		makac.fs.open_dir(h.run_dir):remove()
 		return
 	end
+	-- the overlay survives the teardown: it holds the snapshots the next
+	-- launch resumes from (snapshots.md: the snapshot lives inside
+	-- <run_dir>/disk.qcow2)
 	local d = makac.fs.open_dir(h.run_dir)
 	for _, ent in ipairs(makac.fs.listdir(h.run_dir)) do
-		-- the overlay and whatever lives INSIDE it (snapshots.known models
-		-- the overlay's tag list in the stub) survive the teardown
-		if ent.name ~= "disk.qcow2" and ent.name ~= "snapshots.known" then
+		if ent.name ~= "disk.qcow2" then
 			d:remove(ent.name)
 		end
 	end
@@ -485,15 +499,8 @@ function M.vm(with)
 			tostring(with.state))
 	end
 
-	-- identity: with.name (a VM name) or with.handle (a previous out.handle)
-	if with.name ~= nil and with.handle ~= nil then
-		fail("vm", "give 'with.name' or 'with.handle', not both")
-	end
-	local ident = with.name or with.handle
-	if ident == nil then
-		fail("vm", "'with.name' (a VM name) or 'with.handle' (a previous qemu:vm out.handle) is required")
-	end
-	local h = handlelib.resolve(ident, with.run_dir)
+	-- identity: with.vm — a VM name or a previous out.handle (vm_arg)
+	local h = vm_arg("vm", with)
 
 	if state == "stopped" then
 		return stop("vm", h, with) -- ssh/disk config is start-relevant; a stop ignores it
@@ -562,15 +569,8 @@ function M.loadvm(with)
 			tostring(with.state))
 	end
 
-	-- identity: with.name (a VM name) or with.handle (a previous out.handle)
-	if with.name ~= nil and with.handle ~= nil then
-		fail("loadvm", "give 'with.name' or 'with.handle', not both")
-	end
-	local ident = with.name or with.handle
-	if ident == nil then
-		fail("loadvm", "'with.name' (a VM name) or 'with.handle' (a previous qemu:vm/qemu:loadvm out.handle) is required")
-	end
-	local h = handlelib.resolve(ident, with.run_dir)
+	-- identity: with.vm — a VM name or a previous out.handle (vm_arg)
+	local h = vm_arg("loadvm", with)
 
 	-- the one additional input: the snapshot tag (snapshots.md)
 	local snapshot = with.snapshot
@@ -610,6 +610,26 @@ function M.loadvm(with)
 	end
 	-- keep_overlay: the overlay HOLDS the snapshot — keep, don't recreate
 	return start("loadvm", h, qemu_bin, words, canonical, ssh, disk, with, true)
+end
+
+-- qemu:probe — read a VM's status (handle.md, "Status probing"): out is
+-- exactly the status shape qemu:vm reports (status_out above) — handle,
+-- pid, alive, running, qmp_connected, runstate. A READ: ok, never
+-- changed, and it never fails on a down or wedged VM — those are data
+-- (down: alive = false; wedged: alive = true with running = nil,
+-- qmp_connected = false). Only invalid input fails. Workflows spell
+-- liveness POLICY on top of it ("already up → no-op", "must be down to
+-- re-seed") instead of reaching into pkgs:qemu/handle.
+--
+-- The probe asks QMP first (query-status — through this run's attached
+-- connection when one exists, a transient one otherwise) with pidfile
+-- evidence as fallback. Send caveat: probing through an ATTACHED
+-- connection clears its buffered events (qmp.md's send semantics, same
+-- as any send) — don't probe between a qmp/poll and its consume.
+function M.probe(with)
+	with = with or {}
+	local h = vm_arg("probe", with)
+	return { changed = false, out = status_out(h, handlelib.probe(h)) }
 end
 
 return M

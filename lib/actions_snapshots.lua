@@ -1,5 +1,5 @@
 -- pkgs:qemu/actions_snapshots — internal implementation of qemu:savevm
--- (design2/snapshots.md). A snapshot is the VM's full live state baked into
+-- (design/snapshots.md). A snapshot is the VM's full live state baked into
 -- its disk image under a tag, via QMP `snapshot-save` on the VM's writable
 -- block devices; the guest is quiesced for the capture and keeps running
 -- after. The snapshot survives the VM dying and travels with the image.
