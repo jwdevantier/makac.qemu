@@ -10,6 +10,8 @@ every input (`with`) and output (`out`) is spelled out.
 - [Actions at a glance](actions.md) — the full action table, result shapes,
   common `with` fields.
 - [`qemu:vm`](vm.md) — states, args, overlay disks, ssh target.
+- [`qemu:probe`](probe.md) — read a VM's status; never `changed`, never
+  fails on a down/wedged VM.
 - [`qemu:loadvm`](loadvm.md) — resume from a snapshot.
 - [`qemu:savevm`](savevm.md) — capture a snapshot.
 - [`qemu:qmp/send`, `poll`, `consume`](qmp.md) — the QMP actions.
