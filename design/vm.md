@@ -187,19 +187,34 @@ artifact meant to be reused, not consumed by boots. `with.disk` expresses
 that separation:
 
 ```lua
-disk = { backing = img.out.path }
+disk = { backing = img.out.path }                  -- default: <run_dir>/disk.qcow2
+disk = { backing = img.out.path, path = "assets/live-disk.qcow2" }  -- caller-controlled
 ```
 
 Semantics:
 
-* On start, the package creates a qcow2 overlay at `<run_dir>/disk.qcow2`
-  backed by `backing`:
-  `qemu-img create -f qcow2 -b <backing> -F qcow2 <run_dir>/disk.qcow2`.
-  The backing image is never written to.
+* On start, the package creates a qcow2 overlay at `path` backed by
+  `backing`:
+  `qemu-img create -f qcow2 -b <backing> -F qcow2 <path>`.
+  The backing image is never written to. `path` defaults to
+  `<run_dir>/disk.qcow2`; a caller-supplied `path` may be:
+  * **Relative** — anchored at `<run_dir>`, the same place the default
+    lives (e.g. `path = "my-disk.qcow2"` → `<run_dir>/my-disk.qcow2`).
+    Package-managed: preserved by `qemu:loadvm`'s `keep_overlay` rule,
+    removed by `qemu:vm state = "stopped"`. Same lifecycle as the default.
+  * **Absolute** — anywhere the caller wants (e.g. `path =
+    "/home/me/project/assets/live-disk.qcow2"` or `path =
+    PROJECT .. "/" .. "live-disk.qcow2"`). Caller-managed: `cleanup_runtime_files`
+    never touches files outside `<run_dir>`, so a `savevm` baked into the
+    disk survives across `qemu:vm state = "stopped"` and across runs —
+    exactly the live-disk pattern where the snapshot must travel with a
+    file the workflow (or the user) controls.
 * `args` refers to the overlay via the substitution `{{ disk }}`:
   `{"-drive", "id=bdrv.boot,file={{ disk }},format=qcow2,if=none"}`.
   (`{{ disk }}` is the only substitution available in VM args; it is a spec
-  error when no `disk` is given.)
+  error when no `disk` is given.) The substituted value is the resolved
+  `path` — the run-dir overlay by default, the caller-supplied path when
+  given.
 * `state = "restarted"` (stop + start) recreates the overlay: every fresh
   start of the VM name boots a pristine disk. **Exception: `qemu:loadvm`**
   (snapshots.md). A snapshot saved from an overlay-booted VM lives *in* the
@@ -211,6 +226,9 @@ Semantics:
   image is spelled `state = "restarted"`.
 * Without `disk`, `args` is the complete story and whatever `file=` it names
   is used directly — and mutated by boots.
+* The action's `out.disk` carries the resolved `{ backing, path }` whenever
+  `with.disk` is given, so later steps can refer to the actual overlay on
+  disk without re-deriving it from the input.
 
 ## SSH defaults
 

@@ -143,16 +143,20 @@ local function resolve_ssh(action, h, ssh)
 	return { port = port, user = user, options = options }
 end
 
--- resolve_disk(h, disk): with.disk validation (vm.md, "Overlay boot
--- disks"). Returns nil or { backing = <absolute path> } — the canonical
--- invocation carries backing's ABSOLUTE path (vm.md: a rebuilt image at
--- the same path does not invalidate a running VM).
+-- resolve_disk(action, h, disk): with.disk validation (vm.md, "Overlay
+-- boot disks"). Returns nil or { backing = <abs path>, path = <abs path> }.
+-- `backing` is the base image (never written); `path` is where the overlay
+-- is created. Defaults to <run_dir>/disk.qcow2 (the throwaway overlay the
+-- VM boots onto); a workflow-supplied `path` lands the overlay at a file
+-- the caller controls, so a savevm baked into it can outlive the run dir.
+-- The canonical invocation records `backing` only (vm.md: a rebuilt image
+-- at the same path does not invalidate a running VM).
 local function resolve_disk(action, h, disk)
 	if disk == nil then
 		return nil
 	end
 	if type(disk) ~= "table" then
-		fail(action, "VM '%s': 'with.disk' must be a table { backing = <image path> }, got %s",
+		fail(action, "VM '%s': 'with.disk' must be a table { backing = <image path>, path = <overlay path>? }, got %s",
 			h.name, type(disk))
 	end
 	local backing = disk.backing
@@ -169,23 +173,61 @@ local function resolve_disk(action, h, disk)
 	if makac.fs.stat(backing) == nil then
 		fail(action, "VM '%s': with.disk.backing does not exist: %s", h.name, backing)
 	end
-	return { backing = backing }
+	-- the overlay path: defaults to the run-dir overlay. A user-supplied
+	-- `path` may be relative — anchored to <run_dir>, like the default —
+	-- or absolute, putting the overlay anywhere the caller wants. The
+	-- default location is `<run_dir>/disk.qcow2`; a relative `path` of
+	-- "my-disk.qcow2" lands at `<run_dir>/my-disk.qcow2`. Either way, the
+	-- overlay is package-managed: cleanup_runtime_files leaves it alone
+	-- on a loadvm restart (keep_overlay) and removes it on a qemu:vm stop.
+	-- An absolute path puts the disk OUTSIDE the run dir — entirely
+	-- caller-managed (cleanup never touches files outside <run_dir>) —
+	-- which is the live-disk pattern: a savevm baked into a file the
+	-- caller owns.
+	local path = disk.path
+	if path == nil then
+		path = h.disk_overlay
+	else
+		if type(path) == "userdata" then
+			path = tostring(path)
+		end
+		if type(path) ~= "string" or path == "" then
+			fail(action, "VM '%s': 'with.disk.path' (where to create the overlay) must be a non-empty path, got %s",
+				h.name, tostring(disk.path))
+		end
+		if path:sub(1, 1) ~= "/" then
+			-- relative: anchored at <run_dir>, the same place the default
+			-- lives (handle.lua: disk_overlay = run_dir .. "/disk.qcow2")
+			path = h.run_dir .. "/" .. path
+		end
+		-- create the parent dir as needed: `qemu-img create` would fail on
+		-- a missing parent with "could not create file", less helpful than
+		-- surfacing it here
+		local parent = path:match("^(.*)/[^/]*$")
+		if parent and parent ~= "" then
+			makac.fs.mkdir_p(parent)
+		end
+	end
+	return { backing = backing, path = path }
 end
 
--- create_overlay(action, h, disk): the throwaway qcow2 overlay the VM boots onto
--- (vm.md): `qemu-img create -f qcow2 -b <backing> -F qcow2 <run_dir>/disk.qcow2`.
--- Every fresh START recreates it (a boot consumes its overlay); the
--- exception is a restart resumed by qemu:loadvm (snapshots.md), which
--- keeps the existing overlay — the snapshot lives IN it. os.remove first
--- so a leftover from a crashed stop cannot masquerade as pristine.
+-- create_overlay(action, h, disk): the qcow2 overlay the VM boots onto
+-- (vm.md): `qemu-img create -f qcow2 -b <backing> -F qcow2 <disk.path>`.
+-- The path defaults to <run_dir>/disk.qcow2; a workflow-supplied
+-- `with.disk.path` lands it elsewhere (a savevm baked into the file then
+-- outlives the run dir — exactly the live-disk pattern). Every fresh
+-- START recreates the overlay (a boot consumes it); the exception is a
+-- restart resumed by qemu:loadvm (snapshots.md), which keeps the existing
+-- one — the snapshot lives IN it. os.remove first so a leftover from a
+-- crashed stop cannot masquerade as pristine.
 local function create_overlay(action, h, disk)
-	os.remove(h.disk_overlay)
+	os.remove(disk.path)
 	local ok, res = pcall(makac.exec, {
 		"qemu-img", "create",
 		"-f", "qcow2",
 		"-b", disk.backing,
 		"-F", "qcow2",
-		h.disk_overlay,
+		disk.path,
 	})
 	if not ok then
 		fail(action, "VM '%s': cannot run qemu-img (on PATH?): %s", h.name, tostring(res))
@@ -193,7 +235,7 @@ local function create_overlay(action, h, disk)
 	if res.code ~= 0 then
 		local why = type(res.stderr) == "string" and (res.stderr:gsub("%s+$", "")) or ""
 		fail(action, "VM '%s': qemu-img create failed for overlay %s (backing %s) — qemu-img said: %s",
-			h.name, h.disk_overlay, disk.backing, why)
+			h.name, disk.path, disk.backing, why)
 	end
 end
 
@@ -325,10 +367,15 @@ local function start(action, h, qemu_bin, words, canonical, ssh, disk, with, kee
 		-- changed = false"). The overlay from the original boot still
 		-- stands (only state = "restarted" recreates it). ssh: no waiting
 		-- on a no-op, but out.target is part of the surface whenever ssh is
-		-- configured — set it up.
+		-- configured — set it up. out.disk carries the resolved disk info
+		-- (the same backing/path the original boot used) so callers can
+		-- refer to the actual overlay on disk in later steps.
 		local out = status_out(h, st)
 		if ssh ~= nil then
 			out.target = ensure_target(action, h, ssh)
+		end
+		if disk ~= nil then
+			out.disk = { backing = disk.backing, path = disk.path }
 		end
 		return { changed = false, out = out }
 	end
@@ -422,6 +469,9 @@ local function start(action, h, qemu_bin, words, canonical, ssh, disk, with, kee
 	local out = status_out(h, handlelib.probe(h))
 	out.pid = p.pid -- authoritative for THIS launch (pidfile just written)
 	out.target = target -- nil when ssh is not configured
+	if disk ~= nil then
+		out.disk = { backing = disk.backing, path = disk.path }
+	end
 	return { changed = true, out = out }
 end
 
@@ -524,7 +574,9 @@ function M.vm(with)
 	argslib.check_reserved(with.args)
 	-- `{{ disk }}` substitutes the overlay path (the only substitution in
 	-- VM args; a spec error without with.disk — args.substitute enforces).
-	local words = argslib.substitute(with.args, disk and { disk = h.disk_overlay } or nil)
+	-- The path is whatever resolve_disk settled on: the run-dir overlay by
+	-- default, a user-supplied with.disk.path when given.
+	local words = argslib.substitute(with.args, disk and { disk = disk.path } or nil)
 	-- canonical AFTER flattening + substitution: syntactic variation in how
 	-- the list was composed collapses to the same form (vm.md). The overlay
 	-- backing's absolute path is part of the identity (vm.md: a rebuilt
@@ -594,7 +646,7 @@ function M.loadvm(with)
 			h.name)
 	end
 	argslib.check_reserved(with.args)
-	local words = argslib.substitute(with.args, disk and { disk = h.disk_overlay } or nil)
+	local words = argslib.substitute(with.args, disk and { disk = disk.path } or nil)
 	-- resume instead of boot; the tag participates in the identity
 	words[#words + 1] = "-loadvm"
 	words[#words + 1] = snapshot
