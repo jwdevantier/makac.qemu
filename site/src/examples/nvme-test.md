@@ -173,10 +173,13 @@ run_test("nvme-4k", { "/tmp/tp4176.test" })
 ## Notes
 
 - **Snapshot locality.** `savevm` writes into the VM's writable disk, which
-  for an overlay-booted VM is `.makac/qemu/testvm/disk.qcow2` — so resumed
-  instances use the *same run dir* (same name). The recipe above runs tests
-  *serially*; for *concurrent* instances, use distinct names and make the
-  snapshot live in a shared backing image rather than a per-run-dir overlay.
+  for an overlay-booted VM is either the default `<run_dir>/disk.qcow2`
+  or whatever `with.disk.path` the save side used. In both cases the
+  snapshot lives in the same disk the VM was booted from — so resumed
+  instances use the *same disk path*. The recipe above runs tests
+  *serially*; for *concurrent* instances, use distinct names and either
+  a per-name run dir or a `with.disk.path` that puts each snapshot in a
+  distinct file.
 - **The guest's nvme-driver blacklist** is image content (the `bootbase`
   image's `user-data`), not a step.
 - **Resume is fast.** Each test starts from the snapshot — seconds, not a

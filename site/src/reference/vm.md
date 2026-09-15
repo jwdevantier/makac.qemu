@@ -30,6 +30,8 @@ with = {
         options = { StrictHostKeyChecking = "no" },
     },
     disk = { backing = img.out.path },  -- boot on a throwaway overlay
+                                        -- (see Concepts: Overlay boot disks;
+                                        -- `path = "..."` puts the overlay elsewhere)
     wait_ssh = { timeout_s = 120, interval_s = 2 },  -- default: wait
     -- wait_ssh = false,              -- return as soon as QEMU is launched
     run_dir = "...",                 -- override the runtime directory

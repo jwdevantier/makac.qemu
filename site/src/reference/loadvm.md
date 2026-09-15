@@ -35,10 +35,11 @@ Same as [`qemu:vm`](vm.md): `handle`, `target?`, `pid`, status fields.
 ## Rules
 
 - **Same VM name as the save side.** The snapshot lives in the VM's disk
-  image; for an overlay-booted VM that is `.makac/qemu/<name>/disk.qcow2`
-  of the VM it was saved from. Resume on that same run dir, and
-  `qemu:loadvm` **keeps the existing overlay** rather than recreating it —
-  recreating would destroy the snapshot.
+  image; for an overlay-booted VM that's the disk that VM was saved from —
+  either the default `<run_dir>/disk.qcow2` or whatever `with.disk.path`
+  the save side used. Resume on that same path, and `qemu:loadvm` **keeps
+  the existing overlay** rather than recreating it — recreating would
+  destroy the snapshot.
 
 - **Idempotence = invocation identity.** At launch the package writes the
   canonical invocation — `qemu_bin`, the flattened `args`, and the

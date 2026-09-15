@@ -96,16 +96,38 @@ A VM's boot disk is usually a built image — an artifact meant to be reused,
 not consumed by boots. `with.disk` expresses that separation:
 
 ```lua
-disk = { backing = img.out.path }
+disk = { backing = img.out.path }                          -- default
+disk = { backing = img.out.path, path = "..." }            -- caller-controlled
 ```
 
-On start, the package creates a qcow2 overlay at
-`.makac/qemu/<name>/disk.qcow2` backed by `backing`; the backing image is
-never written to. `args` refers to the overlay via `{{ disk }}`:
+On start, the package creates a qcow2 overlay at `path` backed by `backing`:
+
+```
+qemu-img create -f qcow2 -b <backing> -F qcow2 <path>
+```
+
+The backing image is never written to. `args` refers to the overlay via
+`{{ disk }}`:
 
 ```lua
 { "-drive", "id=bdrv.boot,file={{ disk }},format=qcow2,if=none" },
 ```
+
+### `path`: where the overlay lives
+
+`path` defaults to `.makac/qemu/<name>/disk.qcow2` — the package's
+run-dir overlay. A caller-supplied `path` may be:
+
+* **Relative** — anchored at the run dir, the same place the default
+  lives (`path = "my-disk.qcow2"` → `.makac/qemu/<name>/my-disk.qcow2`).
+  Package-managed: preserved by `qemu:loadvm`'s keep-overlay rule, removed
+  by `qemu:vm state = "stopped"`.
+* **Absolute** — wherever the caller wants
+  (`path = "/home/me/project/assets/live-disk.qcow2"`).
+  Caller-managed: cleanup never touches files outside the run dir, so a
+  `savevm` baked into the disk survives across `qemu:vm state = "stopped"`
+  and across runs — the live-disk pattern, where a snapshot travels with
+  a file the caller controls.
 
 Every fresh start of the VM name boots a pristine disk. **Exception:
 `qemu:loadvm`** — a snapshot saved from an overlay-booted VM lives *in* the
