@@ -643,14 +643,35 @@ local function cloud_init_build(with, ctx)
 				break
 			end
 			if t.now() > deadline then
+				-- Timeout teardown (launch.md's two-escalation shape). The
+				-- escalation check MUST be proc:status(), never pid_alive: the
+				-- customize VM is OUR OWN child, and a child that just died of
+				-- SIGTERM is an UNREAPED ZOMBIE until the parent waitpids —
+				-- kill(pid, 0) succeeds on a zombie, so pid_alive would report
+				-- "alive" even when SIGTERM worked and the SIGKILL escalation
+				-- would fire unconditionally (a no-op on a corpse). status()
+				-- asks the kernel "has my child exited?", reaps it, and
+				-- reports the how: 128+15 = SIGTERM, 128+9 = SIGKILL.
 				pcall(makac.exec, { "kill", tostring(proc.pid) })
-				t.sleep(200 * t.ns_per_ms)
-				if makac.pid_alive(proc.pid) then
+				local how
+				for _ = 1, 10 do -- ~0.5s grace for a graceful poweroff
+					local st = proc:status()
+					if st ~= "running" then
+						how = ("died of %s (code %d)"):format(st.code == 143 and "SIGTERM" or "exit", st.code)
+						break
+					end
+					t.sleep(50 * t.ns_per_ms)
+				end
+				if how == nil then
 					pcall(makac.exec, { "kill", "-9", tostring(proc.pid) })
-					t.sleep(100 * t.ns_per_ms)
+					t.sleep(100 * t.ns_per_ms) -- let the kernel settle the corpse
+					local st = proc:status() -- reap it and get the final word
+					how = st ~= "running"
+						and ("died of %s (code %d)"):format(st.code == 137 and "SIGKILL" or "exit", st.code)
+						or "still alive after SIGKILL"
 				end
 				fail("image '%s': the customize VM timed out after %ds waiting for it to power " ..
-					"itself off\n%s", name, timeout_s, quote_logs())
+					"itself off — %s\n%s", name, timeout_s, how, quote_logs())
 			end
 			t.sleep(50 * t.ns_per_ms)
 		end
