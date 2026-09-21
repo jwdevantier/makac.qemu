@@ -343,6 +343,10 @@ local function status_out(h, st)
 	}
 end
 
+-- forward declaration: start() below stops a partially-launched VM on the
+-- error path (see the errdefer there), but stop() is defined after start().
+local stop
+
 -- start(h, qemu_bin, words, canonical, ssh, disk, with): vm.md "Start
 -- semantics" steps 1–5. words are already flattened + `{{ disk }}`-subst-
 -- ituted; ssh/disk are the already-resolved configs (or nil).
@@ -416,6 +420,15 @@ local function start(action, h, qemu_bin, words, canonical, ssh, disk, with, kee
 		fail(action, "VM '%s': failed to spawn %s: %s", h.name, qemu_bin, tostring(p))
 	end
 
+	-- The VM exists now but the caller does not own it yet. If any launch
+	-- step below fails (launch window, QMP attach, ssh readiness), stop it
+	-- on the way out: errdefer runs only on the error path, so a normal
+	-- return leaves the VM running. guest_shutdown=false + force: the guest
+	-- may never have come up, so don't wait on it.
+	local teardown <close> = makac.errdefer(function()
+		stop(action, h, { guest_shutdown = false, force = true }, keep_overlay)
+	end)
+
 	-- vm.md steps 3+4: the launch window. qqmgr slept a fixed 5s then
 	-- checked; we poll (launch.md) — same detections, latency only when
 	-- warranted.
@@ -476,7 +489,7 @@ local function start(action, h, qemu_bin, words, canonical, ssh, disk, with, kee
 end
 
 -- stop(h, with): vm.md "Stop semantics", launch.md's two-escalation loop.
-local function stop(action, h, with, keep_overlay)
+stop = function(action, h, with, keep_overlay)
 	local st = handlelib.probe(h)
 	if not st.alive then
 		cleanup_runtime_files(h, keep_overlay)
