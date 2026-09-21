@@ -42,6 +42,8 @@ local vm = step {
     -- keys only read for state = "stopped":
     timeout_s = 20,   -- graceful window before force escalation (default 20)
     force = true,     -- allow the force escalation at all (default true)
+    guest_shutdown = true,  -- ask the guest to power itself off first (default);
+                            -- false = skip that handshake, stop by QMP quit
   },
 }
 ```
@@ -170,13 +172,23 @@ Concretely:
 Probe first.
 
 * Not running → remove stale runtime files, `changed = false`.
-* Running → graceful first: QMP `system_powerdown`; poll the pidfile pid's
-  liveness every 1s until the process exits or `timeout_s` (default 20)
-  elapses.
-  Then, when `force` (default true), force: QMP `quit`, then `kill -9` to
+* Running:
+  * `guest_shutdown = true` (default): cooperative first — QMP
+    `system_powerdown`, then poll the pidfile pid's liveness until the
+    process exits or `timeout_s` (default 20) elapses.
+  * `guest_shutdown = false`: skip the guest handshake and stop by QMP
+    `quit` immediately, giving it the whole `timeout_s` window to exit
+    cleanly (a QEMU `quit` flushes the disks — it is not a kill).
+  Then, when `force` (default true) and the process is still alive: QMP
+  `quit` (when that was not already the stop method), then `kill -9` to
   the pidfile pid. On success, close the handle's QMP connection, remove
   runtime files, return `changed = true`. Still alive after both
   escalations is a step failure.
+
+`guest_shutdown = false` is for VMs resumed from a snapshot on a platform
+with no guest powerdown handshake (s390 has no ACPI): the snapshot is
+re-loaded on every resume, so the guest's own shutdown work is moot, and a
+QEMU `quit` still leaves the snapshot-bearing image consistent.
 
 `state = "restarted"` is stop followed by start, unconditionally.
 

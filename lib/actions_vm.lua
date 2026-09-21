@@ -490,28 +490,56 @@ local function stop(action, h, with, keep_overlay)
 		fail(action, "VM '%s': 'with.timeout_s' must be a non-negative number, got %s",
 			h.name, tostring(timeout_s))
 	end
+	-- guest_shutdown (vm.md): true (default) asks the guest OS to power
+	-- itself off first (system_powerdown — a cooperative shutdown); false
+	-- skips that handshake and stops by QMP quit instead: a clean QEMU
+	-- exit that flushes the disks, just without waiting on the guest.
+	local guest_shutdown = with.guest_shutdown
+	if guest_shutdown == nil then
+		guest_shutdown = true
+	elseif type(guest_shutdown) ~= "boolean" then
+		fail(action, "VM '%s': 'with.guest_shutdown' must be a boolean, got %s",
+			h.name, type(guest_shutdown))
+	end
 	local force = with.force ~= false -- default true (vm.md)
 
 	local time = makac.time
-	-- graceful first: ACPI powerdown, then watch the process disappear.
 	-- Best effort (pcall): a wedged QMP (socket dead, pid alive — the
 	-- probe's "wedged" signature) just means we escalate to force.
 	local ok_qmp, qmp = pcall(ensure_qmp, action, h)
-	if ok_qmp then
-		pcall(qmp.send, qmp, { { execute = "system_powerdown" } })
+	local function alive()
+		return st.pid ~= nil and handlelib.process_alive(st.pid)
 	end
-	local deadline = time.now() + timeout_s * time.ns_per_s
-	while st.pid ~= nil and handlelib.process_alive(st.pid) and time.now() < deadline do
-		time.sleep(time.ns_per_s)
+	local function wait_gone(window_ns)
+		local deadline = time.now() + window_ns
+		while alive() and time.now() < deadline do
+			time.sleep(50 * time.ns_per_ms)
+		end
 	end
 
-	-- force escalation: QMP quit, then kill -9 to the pidfile pid.
-	if st.pid ~= nil and handlelib.process_alive(st.pid) and force then
+	if guest_shutdown then
+		-- cooperative first: ACPI powerdown, then watch the process go
 		if ok_qmp then
-			pcall(qmp.send, qmp, { { execute = "quit" } })
+			pcall(qmp.send, qmp, { { execute = "system_powerdown" } })
 		end
-		time.sleep(200 * time.ns_per_ms)
-		if handlelib.process_alive(st.pid) then
+		wait_gone(timeout_s * time.ns_per_s)
+	elseif alive() and ok_qmp then
+		-- the stop method IS the clean QEMU exit; give it the whole
+		-- window to finish flushing before any force escalation
+		pcall(qmp.send, qmp, { { execute = "quit" } })
+		wait_gone(timeout_s * time.ns_per_s)
+	end
+
+	-- force escalation: QMP quit (when not already the stop method), then
+	-- kill -9 to the pidfile pid.
+	if alive() and force then
+		if guest_shutdown then
+			if ok_qmp then
+				pcall(qmp.send, qmp, { { execute = "quit" } })
+			end
+			wait_gone(200 * time.ns_per_ms)
+		end
+		if alive() then
 			makac.exec({ "kill", "-9", tostring(st.pid) })
 			time.sleep(50 * time.ns_per_ms) -- let the kernel settle the corpse
 		end

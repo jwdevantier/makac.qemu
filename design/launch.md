@@ -111,24 +111,32 @@ Same loop shape, two escalation levels:
 ```lua
 local time = makac.time
 
-local function stop(h, timeout_s, force)
+local function stop(h, timeout_s, force, guest_shutdown)
   local st = probe(h)                  -- handle.md
   if not st.alive then cleanup_runtime_files(h) return { changed = false } end
 
   local qmp = qmp_of(h)                -- attach on demand if missing
-  -- graceful: ACPI powerdown, then watch the process disappear.
+  local window = (timeout_s or 20) * time.ns_per_s
   -- process_alive (not pid_alive): kill(pid,0) succeeds on a ZOMBIE, and a
   -- VM that died unreaped is one (see the launch-window note above) —
   -- treating zombies as alive would escalate every stop of a dead VM.
-  qmp:send({ { execute = "system_powerdown" } })
-  local deadline = time.now() + (timeout_s or 20) * time.ns_per_s
+  if guest_shutdown ~= false then
+    -- graceful: ACPI powerdown, then watch the process disappear.
+    qmp:send({ { execute = "system_powerdown" } })
+  else
+    -- stop method: a clean QEMU exit (flushes), given the whole window
+    qmp:send({ { execute = "quit" } })
+  end
+  local deadline = time.now() + window
   while process_alive(st.pid) and time.now() < deadline do
     time.sleep(time.ns_per_s)
   end
 
   if process_alive(st.pid) and (force ~= false) then
-    qmp:send({ { execute = "quit" } }) -- then, if STILL alive:
-    time.sleep(200 * time.ns_per_ms)
+    if guest_shutdown ~= false then
+      qmp:send({ { execute = "quit" } }) -- then, if STILL alive:
+      time.sleep(200 * time.ns_per_ms)
+    end
     if process_alive(st.pid) then
       makac.exec({ "kill", "-9", tostring(st.pid) })
     end
