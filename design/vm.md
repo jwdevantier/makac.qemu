@@ -288,7 +288,7 @@ local ssh_port = 2222
 ## The serial console
 
 `-serial file:<run_dir>/serial` captures the guest console to a file for the
-VM's lifetime. Workflows consume it through `require("pkgs:qemu/serial")`:
+VM's lifetime. Workflows consume it through `require("pkgs/qemu/serial")`:
 
 * `serial.wait_for(handle_or_name, pattern, timeout_s)` — poll the log until
   the Lua pattern matches; on timeout, fail quoting the log's tail. Used for

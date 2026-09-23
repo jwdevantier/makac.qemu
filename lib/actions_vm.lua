@@ -1,4 +1,4 @@
--- pkgs:qemu/actions_vm — internal implementations of the qemu:vm,
+-- pkgs/qemu/actions_vm — internal implementations of the qemu:vm,
 -- qemu:loadvm and qemu:probe actions (design/vm.md, "Start semantics"/
 -- "Stop semantics"/"SSH defaults"/"The ssh target"/"Overlay boot disks";
 -- design/launch.md, which this file follows near-verbatim; handle.md
@@ -18,8 +18,8 @@
 --     (atomically), the way QEMU's own -pidfile would. probe() never
 --     consults the process object — it does not survive the run.
 
-local handlelib = require("pkgs:qemu/handle")
-local argslib = require("pkgs:qemu/args")
+local handlelib = require("pkgs/qemu/handle")
+local argslib = require("pkgs/qemu/args")
 
 local M = {}
 
@@ -712,7 +712,7 @@ end
 -- (down: alive = false; wedged: alive = true with running = nil,
 -- qmp_connected = false). Only invalid input fails. Workflows spell
 -- liveness POLICY on top of it ("already up → no-op", "must be down to
--- re-seed") instead of reaching into pkgs:qemu/handle.
+-- re-seed") instead of reaching into pkgs/qemu/handle.
 --
 -- The probe asks QMP first (query-status — through this run's attached
 -- connection when one exists, a transient one otherwise) with pidfile

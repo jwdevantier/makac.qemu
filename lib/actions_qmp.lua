@@ -1,4 +1,4 @@
--- pkgs:qemu/actions_qmp — internal implementations of the qemu:qmp/*
+-- pkgs/qemu/actions_qmp — internal implementations of the qemu:qmp/*
 -- actions (design/qmp.md). Thin wrappers over the makac.qmp_open client
 -- binding (vm/qmp.odin); the binding already carries the semantics these
 -- actions rely on: send clears the event buffer when it issues commands,
@@ -13,7 +13,7 @@
 -- through the per-run registry at call time (handle.md, "One handle per VM
 -- per run"). Step failures raise with a message naming the VM.
 
-local handlelib = require("pkgs:qemu/handle")
+local handlelib = require("pkgs/qemu/handle")
 
 local M = {}
 
@@ -65,7 +65,7 @@ end
 -- the step, naming the command and its desc; "collect": run them all and
 -- carry failures in out.results[i].error. Each command is
 -- { execute = "...", arguments = {...}? } (arguments nests freely — the
--- pkgs:qemu/qmp library builds these tables, but hand-written ones are
+-- pkgs/qemu/qmp library builds these tables, but hand-written ones are
 -- identical).
 function M.send(with)
 	with = with or {}

@@ -1,4 +1,4 @@
--- pkgs:qemu/handle (internal) — VM handles, the per-run registry, and the
+-- pkgs/qemu/handle (internal) — VM handles, the per-run registry, and the
 -- status probe (design/handle.md).
 --
 -- A handle identifies a VM: a name, a runtime directory, and the QEMU

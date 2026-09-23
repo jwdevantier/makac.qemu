@@ -47,11 +47,11 @@ checkout via the `filesystem` fetcher.)
 
 ## Library modules
 
-* `require("pkgs:qemu/qmp")` — QMP command constructors and reply helpers.
+* `require("pkgs/qemu/qmp")` — QMP command constructors and reply helpers.
   See `qmp.md`.
-* `require("pkgs:qemu/img")` — custom image-builder registration. See
+* `require("pkgs/qemu/img")` — custom image-builder registration. See
   `images.md`.
-* `require("pkgs:qemu/serial")` — waiting for patterns in a VM's serial log.
+* `require("pkgs/qemu/serial")` — waiting for patterns in a VM's serial log.
   See `vm.md`.
 
 (`lib/handle.lua` is internal: handles, the per-run registry and the status

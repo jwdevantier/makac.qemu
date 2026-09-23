@@ -1,4 +1,4 @@
--- pkgs:qemu/args (internal) — flattening and canonical serialization of a
+-- pkgs/qemu/args (internal) — flattening and canonical serialization of a
 -- VM's `args` into a QEMU argument vector (design/vm.md, "`args`: an argv
 -- array", "Auto-injected runtime arguments", "Invocation identity",
 -- "Overlay boot disks").

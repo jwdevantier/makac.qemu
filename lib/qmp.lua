@@ -1,4 +1,4 @@
--- pkgs:qemu/qmp — QMP command constructors and reply helpers (design/qmp.md,
+-- pkgs/qemu/qmp — QMP command constructors and reply helpers (design/qmp.md,
 -- "The library").
 --
 -- PURE table-builders: no socket, no target VM, no sending of anything.

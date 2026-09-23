@@ -1,4 +1,4 @@
--- pkgs:qemu/img — image specs, builder registry, env assembly, manifest
+-- pkgs/qemu/img — image specs, builder registry, env assembly, manifest
 -- caching and the qemu:img action core (design/images.md).
 --
 -- An *image* is a disk-image artifact built from a spec and cached by
@@ -44,7 +44,7 @@ local builders = {} -- name -> { build = fn, manifest = fn? }
 -- return { path = <abs path> }; manifest(with, ctx) returns the input
 -- table whose change invalidates the build. ctx carries state_dir, the
 -- assembled env and an exec helper (raising on failure). Not exported
--- through the package system — workflow code require()s pkgs:qemu/img.
+-- through the package system — workflow code require()s pkgs/qemu/img.
 function M.register_builder(name, build_fn, manifest_fn)
 	assert(type(name) == "string" and name ~= "",
 		"qemu:img register_builder: the builder name must be a non-empty string")
@@ -401,7 +401,7 @@ M.register_builder("raw",
 --   <state_dir>/serial.log        the customize VM's serial console
 --   <state_dir>/qemu-stderr.log   the customize VM's stderr
 
-local arglib = require("pkgs:qemu/args")
+local arglib = require("pkgs/qemu/args")
 
 -- render_template(env, text): the one rule (images.md, "Templates"):
 -- `{{ name }}` expands to env[name]; a name absent from the env is a spec

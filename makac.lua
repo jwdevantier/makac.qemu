@@ -9,10 +9,10 @@
 -- repository's design/action.md); makac normalizes their result
 -- table ({ err?, changed?, skipped?, out? }).
 
-local actions_qmp = require("pkgs:qemu/actions_qmp")
-local actions_vm = require("pkgs:qemu/actions_vm")
-local actions_snapshots = require("pkgs:qemu/actions_snapshots")
-local img = require("pkgs:qemu/img")
+local actions_qmp = require("pkgs/qemu/actions_qmp")
+local actions_vm = require("pkgs/qemu/actions_vm")
+local actions_snapshots = require("pkgs/qemu/actions_snapshots")
+local img = require("pkgs/qemu/img")
 
 return {
 	actions = {

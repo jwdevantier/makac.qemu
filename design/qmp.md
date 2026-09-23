@@ -1,4 +1,4 @@
-# QMP: `qemu:qmp/send`, `poll`, `consume`, and `pkgs:qemu/qmp`
+# QMP: `qemu:qmp/send`, `poll`, `consume`, and `pkgs/qemu/qmp`
 
 QMP is QEMU's control protocol: JSON over a unix socket — the one every
 `qemu:vm` VM opens at `<run_dir>/qmp.socket`.
@@ -12,7 +12,7 @@ library:
 * `qemu:qmp/send` — send commands to a VM, as a step;
 * `qemu:qmp/poll` — drain pending events from a VM's event stream;
 * `qemu:qmp/consume` — discard events a workflow has finished treating;
-* `require("pkgs:qemu/qmp")` — construct command tables, read replies.
+* `require("pkgs/qemu/qmp")` — construct command tables, read replies.
 
 A workflow writes and reads Lua tables throughout; the JSON wire format is
 not part of its surface. Every action accepts `with.vm` — a handle or a
@@ -107,7 +107,7 @@ to `qemu:qmp/send`, the only place commands are sent — and the only place a
 VM is named:
 
 ```lua
-local qmp = require("pkgs:qemu/qmp")
+local qmp = require("pkgs/qemu/qmp")
 
 step {
   uses = "qemu:qmp/send",

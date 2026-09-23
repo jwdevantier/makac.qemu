@@ -108,7 +108,7 @@ VM's serial log and qemu-stderr, which stay in the state dir for inspection.
 ## Custom builders
 
 ```lua
-local img = require("pkgs:qemu/img")
+local img = require("pkgs/qemu/img")
 
 img.register_builder("my-builder",
   -- build

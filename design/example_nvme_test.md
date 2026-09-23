@@ -7,7 +7,7 @@ from the snapshot, hotplug an NVMe device at a known BDF, bind it to
 vfio-pci in the guest, exercise it via `/dev/vfio/<group>`, and tear down.
 
 ```lua
-local qmp = require("pkgs:qemu/qmp")
+local qmp = require("pkgs/qemu/qmp")
 
 local QEMU = "/home/nixos/repos/qemu/build/qemu-system-x86_64"
 

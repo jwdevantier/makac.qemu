@@ -1,4 +1,4 @@
--- pkgs:qemu/serial — waiting for patterns in a VM's serial log
+-- pkgs/qemu/serial — waiting for patterns in a VM's serial log
 -- (design/vm.md, "The serial console").
 --
 -- QEMU captures the guest console to a file for the VM's lifetime
@@ -14,7 +14,7 @@
 -- Both resolve their first argument exactly like the actions do (a name
 -- re-derives the handle), so a VM started by an earlier run can be tailed.
 
-local handlelib = require("pkgs:qemu/handle")
+local handlelib = require("pkgs/qemu/handle")
 
 local M = {}
 
