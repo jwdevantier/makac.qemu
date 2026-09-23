@@ -1,0 +1,1819 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>makac.qemu</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-2459343d.css">
+        <link rel="stylesheet" href="css/chrome-ae938929.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-741a1476.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-ef614c06.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">makac.qemu</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/jwdevantier/makac.qemu" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<p>makac.qemu is a <a href="https://jwdevantier.github.io/makac/">makac</a> package that turns
+makac into a <strong>VM orchestrator</strong>. It adds steps to build disk images, manage
+QEMU virtual machines, take and resume snapshots, and talk to a running VM over
+QMP — everything needed to exercise QEMU device code or an OS kernel inside
+a VM, end to end.</p>
+<h2 id="the-pattern"><a class="header" href="#the-pattern">The pattern</a></h2>
+<p>The package exists for one workflow shape above all:</p>
+<ol>
+<li><strong>build</strong> a bootable disk image (a cloud-init-customized OS),
+<ul>
+<li>supports building images from cloud-init and raw disk images</li>
+</ul>
+</li>
+<li><strong>boot</strong> the VM once - and make a snapshot
+<ul>
+<li>Ideally boot with an overlay image to have the snapshot persisted there</li>
+</ul>
+</li>
+<li>For each test:
+<ul>
+<li><strong>load the VM from saved state</strong> - bypassing boot-time</li>
+<li>(for testing QEMU devices) - hotplug devices into the VM via QMP calls
+<ul>
+<li>ensures there is no lingering device state between tests.</li>
+</ul>
+</li>
+<li>await the VM adding the device</li>
+<li>run tests</li>
+</ul>
+</li>
+<li>Kill the VM</li>
+</ol>
+<p>Snapshotting accomplishes two things - amortizing boot time cost, over
+many tests and removing test interference - if you add the device(s) under
+test dynamically using QMP after loading the VM.</p>
+<p><a href="#the-nvme-snapshot--hotplug-test-loop">The NVMe test loop</a> is the canonical example — it
+boots a VM, snapshots it, then runs a series of tests that each resume from
+the snapshot, hotplug an NVMe controller at a known PCI address, bind it to
+<code>vfio-pci</code> in the guest, and exercise it.</p>
+<h2 id="what-makacqemu-provides"><a class="header" href="#what-makacqemu-provides">What makac.qemu provides</a></h2>
+<p>For illustrative purposes, this assumes you add the package under the id ‘qemu’, see <a href="#getting-started-1">Getting Started</a>. Adjust to match the id you assign to the dependency.</p>
+<h3 id="actions"><a class="header" href="#actions">Actions</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Action</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="#qemuvm"><code>qemu:vm</code></a></td><td>Bring a VM to a state: <code>started</code>, <code>stopped</code>, <code>restarted</code>. A started VM with ssh configured is returned as a makac remote target.</td></tr>
+<tr><td><a href="#qemuimg"><code>qemu:img</code></a></td><td>Ensure a disk image is built: a raw blank, a cloud-init-customized OS image, or a fully custom builder. Content-cached.</td></tr>
+<tr><td><a href="#qemusavevm"><code>qemu:savevm</code></a></td><td>Capture a running VM’s state (RAM + devices) into its image under a tag.</td></tr>
+<tr><td><a href="#qemuloadvm"><code>qemu:loadvm</code></a></td><td>Boot a VM resuming from a snapshot — the “boot once, test many times” trick.</td></tr>
+<tr><td><a href="#qemuqmpsend-qemuqmppoll-qemuqmpconsume"><code>qemu:qmp/send</code></a></td><td>Send QMP commands to a VM (e.g. hotplug a device).</td></tr>
+<tr><td><a href="#qemuqmpsend-qemuqmppoll-qemuqmpconsume"><code>qemu:qmp/poll</code></a></td><td>Drain events from a VM’s QMP event stream.</td></tr>
+<tr><td><a href="#qemuqmpsend-qemuqmppoll-qemuqmpconsume"><code>qemu:qmp/consume</code></a></td><td>Discard events the workflow has finished treating.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="library-code"><a class="header" href="#library-code">Library code</a></h3>
+<ul>
+<li><a href="#library-modules"><code>require("pkgs/qemu/qmp")</code></a>
+<ul>
+<li>Helpers to construct QMP commands</li>
+</ul>
+</li>
+<li><code>require("pkgs/qemu/img")</code>
+<ul>
+<li>Custom image builders for raw- and cloud-init images.</li>
+<li>You can create your own builders to use with the <code>qemu:img</code> action</li>
+</ul>
+</li>
+<li><code>require("pkgs/qemu/serial")</code>
+<ul>
+<li>Code to wait on particular strings appearing on the QEMU VM’s serial console</li>
+</ul>
+</li>
+</ul>
+<h2 id="the-big-ideas"><a class="header" href="#the-big-ideas">The big ideas</a></h2>
+<ul>
+<li><strong>Declarative</strong>
+<ul>
+<li>Every action describes a desired state, not definite action to take</li>
+</ul>
+</li>
+<li><strong>VMs survive runs</strong>
+<ul>
+<li>A VM is only stopped if the workflow does it</li>
+<li>You can split starting and stopping across separate workflows and work on the VM in between</li>
+</ul>
+</li>
+<li><strong>Caching</strong>
+<ul>
+<li>Cloud-init images rebuild <em>only</em> when their inputs change; otherwise a NO-OP</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><strong>Overlays for VM state</strong>
+<ul>
+<li>QEMUs ability to save VM state requires writing it into the QCOW2 image</li>
+<li>Use a qcow2 image overlay on top of the base cloud-init image to
+<ul>
+<li>avoid tampering the original image</li>
+<li>allow multiple VMs to use the same base image, even while saving VM state</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Use QMP to dynamically add devices</strong></li>
+</ul>
+<h2 id="dependencies"><a class="header" href="#dependencies">Dependencies</a></h2>
+<ul>
+<li><a href="https://jwdevantier.github.io/makac">makac</a>
+<ul>
+<li>The workflow runner</li>
+</ul>
+</li>
+<li><code>qemu-system-&lt;arch&gt;</code>
+<ul>
+<li>QEMU binary - can be set per-step</li>
+</ul>
+</li>
+<li><code>qemu-img</code>
+<ul>
+<li>for creating QEMU images (raw <em>and</em> qcow2)</li>
+</ul>
+</li>
+<li><code>genisoimage</code>
+<ul>
+<li>for creating the cloud-init ISO containing the assets and cloud-init scripts which customize the base, upstream cloud-init image.</li>
+</ul>
+</li>
+<li><code>ssh</code>, <code>scp</code>
+<ul>
+<li>communicating with the VM itself</li>
+</ul>
+</li>
+</ul>
+<h2 id="getting-started"><a class="header" href="#getting-started">Getting started</a></h2>
+<p>Head to <a href="#getting-started-1">Getting Started</a> to declare the package in your
+project and run your first VM.</p>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="getting-started-1"><a class="header" href="#getting-started-1">Getting Started</a></h1>
+<p>This page walks you through declaring the package in a makac project and
+starting your first VM.</p>
+<h2 id="requirements"><a class="header" href="#requirements">Requirements</a></h2>
+<ul>
+<li>A <a href="https://jwdevantier.github.io/makac/">makac</a> install (any version with
+the package system).</li>
+<li>On the machine that runs makac:
+<ul>
+<li><code>qemu-system-x86_64</code> (or the arch you target) — path configurable per
+step,</li>
+<li><code>qemu-img</code> — overlay disks and image resize,</li>
+<li><code>genisoimage</code> — building cloud-init ISOs (only for the <code>cloud-init</code>
+image builder),</li>
+<li><code>ssh</code> — guest access (only when you use the ssh target).</li>
+</ul>
+</li>
+</ul>
+<h2 id="declare-the-package"><a class="header" href="#declare-the-package">Declare the package</a></h2>
+<p>Packages are declared in <code>.makac/packages.lua</code> inside your project’s data
+directory:</p>
+<pre><code class="language-lua">-- .makac/packages.lua
+return {
+    {
+        id = "qemu",
+        fetcher = "fetchgit",
+        with = {
+            url = "https://github.com/jwdevantier/makac.qemu",
+            rev = "main",
+        },
+    },
+}
+</code></pre>
+<p>Then fetch it:</p>
+<pre><code class="language-bash">$ makac fetch
+defined packages (#1):
+  1. qemu (fetcher: fetchgit)
+fetching qemu via fetchgit...
+fetched qemu
+</code></pre>
+<blockquote>
+<p><strong>During development</strong>, point at your checkout with the <code>filesystem</code>
+fetcher instead — nothing is copied, edits are live:</p>
+<pre><code class="language-lua">{
+    id = "qemu",
+    fetcher = "filesystem",
+    with = { path = "path/to/makac.qemu" },
+}
+</code></pre>
+</blockquote>
+<p>See <a href="https://jwdevantier.github.io/makac/reference/fetchers.html">makac’s fetchers documentation</a>
+for the full argument tables.</p>
+<h2 id="run-a-workflow-that-starts-a-vm"><a class="header" href="#run-a-workflow-that-starts-a-vm">Run a workflow that starts a VM</a></h2>
+<p>Create <code>vm.lua</code>:</p>
+<pre><code class="language-lua">step {
+    name = "start test VM",
+    uses = "qemu:vm",
+    with = {
+        name  = "testvm",
+        state = "started",
+        qemu_bin = "qemu-system-x86_64",
+        args = {
+            "-nodefaults",
+            { "-machine", "q35,accel=kvm,kernel-irqchip=split" },
+            "-cpu", "host",
+            "-smp", "2",
+            "-m", "4096",
+        },
+    },
+}
+</code></pre>
+<p>Run it:</p>
+<pre><code class="language-bash">$ makac run vm.lua
+run: [host] start test VM
+changed: [host] start test VM (0.5s)
+</code></pre>
+<p>The VM is now running, detached from makac. Its runtime files — pidfile,
+QMP socket, serial log, invocation record — live under
+<code>.makac/qemu/testvm/</code>. The workflow did not configure ssh, so no target was
+returned; to actually <em>do</em> something inside the guest, add <code>with.ssh</code> (see
+<a href="#qemuvm"><code>qemu:vm</code></a>).</p>
+<h2 id="stop-it"><a class="header" href="#stop-it">Stop it</a></h2>
+<p>Stopping is a step too — graceful powerdown, with escalation if the guest
+wedges:</p>
+<pre><code class="language-lua">step {
+    uses = "qemu:vm",
+    with = { vm = "testvm", state = "stopped" },
+}
+</code></pre>
+<pre><code class="language-bash">$ makac run stop.lua
+changed: [host] stop test VM (1.2s)
+</code></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next steps</a></h2>
+<ul>
+<li><a href="#concepts">Concepts</a> — how VMs, images, snapshots and QMP fit
+together.</li>
+<li><a href="#the-nvme-snapshot--hotplug-test-loop">The NVMe test loop</a> — the full
+build → boot → snapshot → resume → hotplug → test → teardown cycle.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="concepts"><a class="header" href="#concepts">Concepts</a></h1>
+<p>makac.qemu’s model has four nouns:</p>
+<ul>
+<li><strong>A <a href="#vms-and-handles">VM</a></strong> — a QEMU process plus its runtime files, identified by a
+name, addressed through a <em>handle</em>. Brought to a state (<code>started</code> /
+<code>stopped</code> / <code>restarted</code>) by <code>qemu:vm</code>; resumed from a snapshot by
+<code>qemu:loadvm</code>.</li>
+<li><strong>An <a href="#images">image</a></strong> — a disk-image artifact built from a spec and
+cached by hashes of its inputs. Built by <code>qemu:img</code>.</li>
+<li><strong>A <a href="#snapshots">snapshot</a></strong> — a VM’s full state (RAM + devices) baked
+into its disk image under a tag. Captured by <code>qemu:savevm</code>, resumed by
+<code>qemu:loadvm</code>.</li>
+<li><strong>QMP</strong> — QEMU’s control protocol, surfaced as <code>qemu:qmp/send</code>, <code>poll</code>
+and <code>consume</code>. How the workflow hotplugs devices, reads events, and gets
+status.</li>
+</ul>
+<p>State survives <code>makac run</code> exiting: everything lives under the project’s
+data directory (<code>.makac/qemu/...</code>), keyed by <em>content</em> for images and by
+<em>name</em> for VMs.</p>
+<h2 id="the-four-pages"><a class="header" href="#the-four-pages">The four pages</a></h2>
+<ul>
+<li><a href="#vms-and-handles">VMs and handles</a> — states, the argv <code>args</code>, overlay boot disks,
+the ssh target, handles and status.</li>
+<li><a href="#images">Images</a> — the <code>raw</code> and <code>cloud-init</code> builders, caching, custom
+builders.</li>
+<li><a href="#snapshots">Snapshots</a> — the boot-once/test-many loop, tags, overlay
+interplay.</li>
+<li><a href="#qmp">QMP</a> — the event discipline, hotplug, the command-constructor
+library.</li>
+</ul>
+<h2 id="a-minimal-workflow-using-most-of-the-model"><a class="header" href="#a-minimal-workflow-using-most-of-the-model">A minimal workflow using most of the model</a></h2>
+<pre><code class="language-lua">local img = step {
+    name = "build boot disk",
+    uses = "qemu:img",
+    with = { name = "bootbase", builder = "raw", img_size = "1G" },
+}
+
+local vm = step {
+    name = "boot testvm",
+    uses = "qemu:vm",
+    with = {
+        name     = "testvm",
+        qemu_bin = "qemu-system-x86_64",
+        disk     = { backing = img.out.path },
+        args = {
+            "-nodefaults",
+            { "-machine", "q35,accel=kvm" },
+            { "-drive",  "id=bdrv.boot,file={{ disk }},format=qcow2,if=none" },
+            { "-device", "nvme,id=nvme-ctrl.0" },
+            { "-device", "nvme-ns,id=ns.boot,drive=bdrv.boot,nsid=1,bus=nvme-ctrl.0" },
+        },
+    },
+}
+
+local snap = step {
+    name = "snapshot booted state",
+    uses = "qemu:savevm",
+    with = { vm = vm.out.handle, tag = "base" },
+}
+
+step { uses = "qemu:vm", with = { vm = "testvm", state = "stopped" } }
+</code></pre>
+<p>Build an image, boot the VM onto a throwaway overlay of it, snapshot the
+booted state into the overlay, stop. Every later test resumes from <code>"base"</code>
+with <code>qemu:loadvm</code> — see the <a href="#the-nvme-snapshot--hotplug-test-loop">NVMe test loop</a> for
+the full pattern.</p>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="vms-and-handles"><a class="header" href="#vms-and-handles">VMs and handles</a></h1>
+<p>A <strong>VM</strong> is a QEMU process plus its runtime files. The package identifies a
+VM by a <strong>name</strong> you choose (<code>"testvm"</code>), and addresses it through a
+<strong>handle</strong> — a Lua table of paths and names that <code>qemu:vm</code> returns in
+<code>out.handle</code> and every other VM action accepts (a plain name works
+everywhere a handle does).</p>
+<h2 id="runtime-files"><a class="header" href="#runtime-files">Runtime files</a></h2>
+<p>A started VM keeps its state under <code>.makac/qemu/&lt;name&gt;/</code>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>file</th><th>purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>pid</code></td><td>the QEMU process id</td></tr>
+<tr><td><code>qmp.socket</code></td><td>the QMP control socket (unix)</td></tr>
+<tr><td><code>monitor.socket</code></td><td>the human monitor socket</td></tr>
+<tr><td><code>serial</code></td><td>the guest console, captured to a file</td></tr>
+<tr><td><code>qemu-stdout.log</code> / <code>qemu-stderr.log</code></td><td>QEMU’s own output</td></tr>
+<tr><td><code>invocation</code></td><td>the canonical command line the VM was started with</td></tr>
+<tr><td><code>disk.qcow2</code></td><td>the overlay boot disk (when <code>with.disk</code> is given)</td></tr>
+<tr><td><code>ssh.conf</code></td><td>generated ssh config (when ssh is configured)</td></tr>
+</tbody>
+</table>
+</div>
+<p>These are the <em>named</em> state: all workflows sharing the data directory share
+VM names. Naming a VM asserts “my VM” — if a VM of that name is already
+running with a <em>different</em> invocation, <code>qemu:vm</code> fails rather than reusing
+or replacing it. Two workflows that want isolation pick different names.</p>
+<h2 id="args-the-qemu-command-line"><a class="header" href="#args-the-qemu-command-line"><code>args</code>: the QEMU command line</a></h2>
+<p><code>with.args</code> is the QEMU command line in <strong>argv form</strong> — each element is one
+word, passed verbatim, never split:</p>
+<pre><code class="language-lua">args = {
+    "-nodefaults",
+    "-machine", "q35,accel=kvm",
+    "-m", "4096",
+}
+</code></pre>
+<p>Elements may be nested arrays or functions; all are flattened before launch,
+so configuration composes:</p>
+<pre><code class="language-lua">local function boot_disk(device)
+    return {
+        "-drive", "id=bdrv.boot,file=" .. device .. ",format=qcow2,if=none",
+        { "-device", "nvme-ns,id=ns.boot,drive=bdrv.boot,nsid=1,bus=nvme-ctrl.1" },
+        function() return { "-boot", "order=c" } end,
+    }
+end
+</code></pre>
+<p>Associative tables serialize to a single QEMU property word — canonically
+(keys sort lexically, <code>true</code> values become bare flags):</p>
+<pre><code class="language-lua">{ "-netdev", { user = true, id = "net0", hostfwd = "tcp::2222-:22" } }
+-- one word: "hostfwd=tcp::2222-:22,id=net0,user"
+</code></pre>
+<p>List-like structure keeps its order — argv order is meaning in QEMU.</p>
+<p>On start, the package appends its own infrastructure arguments
+(<code>-pidfile</code>, <code>-monitor</code>, <code>-serial</code>, <code>-qmp</code>) pointing into the run
+directory. Supplying any of those yourself is a spec error.</p>
+<p>One substitution is available: <code>{{ disk }}</code> expands to the overlay disk
+path (see below). Using it without <code>with.disk</code> is a spec error.</p>
+<h2 id="states"><a class="header" href="#states">States</a></h2>
+<p><code>qemu:vm</code> brings a VM to a state:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>state</th><th>meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>started</code> (default)</td><td>launch the VM; no-op if it’s already running the same invocation</td></tr>
+<tr><td><code>stopped</code></td><td>graceful powerdown (<code>system_powerdown</code>, then escalate), remove runtime files</td></tr>
+<tr><td><code>restarted</code></td><td>stop, then start, unconditionally</td></tr>
+</tbody>
+</table>
+</div>
+<p>“Same invocation” is decided byte-for-byte on the canonical command line
+(<code>qemu_bin</code> + flattened <code>args</code>, associative tables canonicalized) — <code>-m 4G</code>
+and <code>-m 4096</code> are different invocations. A running VM whose invocation
+differs is a spec failure: change it with <code>state = "restarted"</code>.</p>
+<p>Starting waits for ssh if configured (<code>wait_ssh</code>, default on): a VM that
+never answers is a step failure quoting its serial log.</p>
+<h2 id="overlay-boot-disks"><a class="header" href="#overlay-boot-disks">Overlay boot disks</a></h2>
+<p>A VM’s boot disk is usually a built image — an artifact meant to be reused,
+not consumed by boots. <code>with.disk</code> expresses that separation:</p>
+<pre><code class="language-lua">disk = { backing = img.out.path }                          -- default
+disk = { backing = img.out.path, path = "..." }            -- caller-controlled
+</code></pre>
+<p>On start, the package creates a qcow2 overlay at <code>path</code> backed by <code>backing</code>:</p>
+<pre><code>qemu-img create -f qcow2 -b &lt;backing&gt; -F qcow2 &lt;path&gt;
+</code></pre>
+<p>The backing image is never written to. <code>args</code> refers to the overlay via
+<code>{{ disk }}</code>:</p>
+<pre><code class="language-lua">{ "-drive", "id=bdrv.boot,file={{ disk }},format=qcow2,if=none" },
+</code></pre>
+<h3 id="path-where-the-overlay-lives"><a class="header" href="#path-where-the-overlay-lives"><code>path</code>: where the overlay lives</a></h3>
+<p><code>path</code> defaults to <code>.makac/qemu/&lt;name&gt;/disk.qcow2</code> — the package’s
+run-dir overlay. A caller-supplied <code>path</code> may be:</p>
+<ul>
+<li><strong>Relative</strong> — anchored at the run dir, the same place the default
+lives (<code>path = "my-disk.qcow2"</code> → <code>.makac/qemu/&lt;name&gt;/my-disk.qcow2</code>).
+Package-managed: preserved by <code>qemu:loadvm</code>’s keep-overlay rule, removed
+by <code>qemu:vm state = "stopped"</code>.</li>
+<li><strong>Absolute</strong> — wherever the caller wants
+(<code>path = "/home/me/project/assets/live-disk.qcow2"</code>).
+Caller-managed: cleanup never touches files outside the run dir, so a
+<code>savevm</code> baked into the disk survives across <code>qemu:vm state = "stopped"</code>
+and across runs — the live-disk pattern, where a snapshot travels with
+a file the caller controls.</li>
+</ul>
+<p>Every fresh start of the VM name boots a pristine disk. <strong>Exception:
+<code>qemu:loadvm</code></strong> — a snapshot saved from an overlay-booted VM lives <em>in</em> the
+overlay, so a restart that resumes from a snapshot keeps the existing
+overlay instead of recreating it.</p>
+<h2 id="the-ssh-target"><a class="header" href="#the-ssh-target">The ssh target</a></h2>
+<p>When <code>with.ssh</code> is given, a started VM is returned as <code>out.target</code> — an
+ordinary makac remote target named after the VM, usable by later steps:</p>
+<pre><code class="language-lua">step {
+    uses = "shell",
+    target = vm.out.target,
+    with = { cmd = { "uname", "-a" } },
+}
+</code></pre>
+<p><code>with.ssh.port</code> is the <strong>host-assigned port</strong> (the guest side of the
+forwarding lives in <code>args</code>, e.g. <code>hostfwd=tcp::2222-:22</code>). Other ssh keys
+fall back to workflow globals, then built-in defaults:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>ssh key</th><th>global</th><th>default</th></tr>
+</thead>
+<tbody>
+<tr><td><code>port</code></td><td><code>VM_SSH_PORT</code></td><td>none (required)</td></tr>
+<tr><td><code>user</code></td><td><code>VM_SSH_USER</code></td><td><code>"root"</code></td></tr>
+<tr><td><code>identity_file</code></td><td><code>VM_SSH_IDENTITY_FILE</code></td><td>none</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code class="language-lua">VM_SSH_USER = "admin"
+VM_SSH_PORT = 2222
+</code></pre>
+<p>The forwarding must agree between <code>args</code> and <code>ssh.port</code> — the package does
+not parse <code>hostfwd=</code> to cross-check it. Convention: bind both to one Lua
+value.</p>
+<h2 id="status"><a class="header" href="#status">Status</a></h2>
+<p>A VM’s status is defined by a probe: QMP first (<code>query-status</code>), then the
+pidfile. The probe result is available in <code>qemu:vm</code>’s <code>out</code> — and as the
+output of the read-only <a href="#qemuprobe"><code>qemu:probe</code></a> action, for
+workflow policy like “already up → no-op”:</p>
+<pre><code class="language-lua">{
+    pid           = 1234 or nil,
+    alive         = true,     -- process exists
+    running       = true,     -- vCPUs executing (QMP-derived; nil if QMP unreachable)
+    qmp_connected = true,     -- was QMP reachable in this probe?
+    runstate      = "running",-- QMP runstate, or nil
+}
+</code></pre>
+<p><code>alive</code> true with <code>running</code> nil is the “the VM is wedged” signature —
+process up, QMP unresponsive.</p>
+<h2 id="the-serial-console"><a class="header" href="#the-serial-console">The serial console</a></h2>
+<p><code>-serial file:&lt;run_dir&gt;/serial</code> captures the guest console for the VM’s
+lifetime. Workflows consume it through <code>require("pkgs/qemu/serial")</code>:</p>
+<pre><code class="language-lua">local serial = require("pkgs/qemu/serial")
+
+serial.wait_for(vm.out.handle, "login:", 30)   -- wait for a Lua pattern
+serial.tail(vm.out.handle, 20)                 -- last 20 lines
+</code></pre>
+<p>Used for “wait for login prompt”, “wait for cloud-init done”,
+device-appearance loops, …</p>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="images"><a class="header" href="#images">Images</a></h1>
+<p>An <strong>image</strong> is a disk-image artifact built from a spec and cached by hashes
+of its inputs. One action, one <code>builder</code> key:</p>
+<pre><code class="language-lua">local img = step {
+    name = "build fedora base image",
+    uses = "qemu:img",
+    with = {
+        name    = "fedora-base",
+        builder = "cloud-init",
+        -- ... builder-specific keys
+    },
+}
+-- img.out.path == "/abs/.../.makac/qemu/img/fedora-base/image"
+</code></pre>
+<p><code>qemu:img</code> dispatches on <code>with.builder</code> — a built-in name (<code>"raw"</code>,
+<code>"cloud-init"</code>), a registered custom builder, or a function. Every builder
+returns <code>out.path</code> (absolute path to the image) and <code>changed</code> iff any stage
+ran.</p>
+<h2 id="caching"><a class="header" href="#caching">Caching</a></h2>
+<p>A builder is a pipeline of stages. Before a stage runs, the package computes
+a <strong>manifest</strong> — a hash over every input the stage consumes — and compares
+it against the manifest stored from the previous run. Match: the stage is
+skipped. Mismatch or missing: it runs and saves the new manifest.</p>
+<p>Concretely: editing a cloud-init template re-runs “render” and everything
+after it, but does not re-download the base image or re-run the resize.</p>
+<p>Image state lives under <code>.makac/qemu/img/&lt;name&gt;/</code>. Two workflows naming the
+same image build the <em>same</em> artifact as long as their inputs hash the same
+— sharing is the design. <code>with.force = true</code> bypasses the cache and
+rebuilds.</p>
+<h2 id="the-environment-and-env_hook"><a class="header" href="#the-environment-and-env_hook">The environment and <code>env_hook</code></a></h2>
+<p>Builders assemble an environment (a k→v table, most visibly consumed by
+cloud-init templates) in two steps: start from <code>with.env</code>, then let
+<code>with.env_hook</code> transform it:</p>
+<pre><code class="language-lua">env = { hostname = "testbox" },
+
+env_hook = function(env)
+    local f = io.open(os.getenv("HOME") .. "/.ssh/id_ed25519.pub")
+    env.ssh_public_key = f and (f:read("a"):gsub("%s+$", "")) or ""
+    if f then f:close() end
+    env.root_password_hash = "$6$rounds=4096$dZvpjkhL4EwsC3Wi$lJ8pB0hy..."
+    return env
+end,
+</code></pre>
+<p>The hook is ordinary Lua: read a pubkey, derive a password hash, generate an
+instance id.</p>
+<h2 id="builder-raw"><a class="header" href="#builder-raw">Builder <code>raw</code></a></h2>
+<p>Empty disk images:</p>
+<pre><code class="language-lua">{
+    name    = "raw-1",
+    builder = "raw",
+    img_size = "1G",
+    -- format = "raw" (default)
+}
+</code></pre>
+<p>One stage: <code>qemu-img create</code> under a manifest of name/size/format.</p>
+<h2 id="builder-cloud-init"><a class="header" href="#builder-cloud-init">Builder <code>cloud-init</code></a></h2>
+<p>A customized OS image from a stock cloud image, in five content-cached
+stages:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>stage</th><th>does</th></tr>
+</thead>
+<tbody>
+<tr><td>1. download</td><td>fetch the base image (url + sha256) into the makac download cache</td></tr>
+<tr><td>2. prepare</td><td>copy base to the state dir, resize to <code>img_size</code>, create the working overlay</td></tr>
+<tr><td>3. templates</td><td>render each <code>templates</code> entry with the env</td></tr>
+<tr><td>4. iso</td><td><code>genisoimage -volid cidata</code> from the rendered templates + sources</td></tr>
+<tr><td>5. customize</td><td>boot a throwaway VM (image as disk, ISO as cdrom); wait for it to power itself off</td></tr>
+</tbody>
+</table>
+</div>
+<p>Required keys: <code>img_size</code>; <code>qemu_bin</code> and <code>build_args</code> (the throwaway VM’s
+command line, flattened exactly like <code>qemu:vm</code>’s <code>args</code>);
+<code>base_img = { url =, sha256 = }</code>; <code>templates</code> — at minimum user-data and
+meta-data:</p>
+<pre><code class="language-lua">{
+    name     = "bootbase",
+    builder  = "cloud-init",
+    qemu_bin = "qemu-system-x86_64",
+    img_size = "10G",
+
+    base_img = {
+        url    = "https://example.com/fedora-cloud-base.qcow2",
+        sha256 = "&lt;64 hex chars&gt;",
+    },
+
+    env = { hostname = "testbox" },
+
+    templates = {
+        { template = "templates/user-data.tpl",   output = "user-data" },
+        { template = "templates/meta-data.tpl",   output = "meta-data" },
+    },
+
+    sources = {                        -- optional: extra files grafted into the ISO
+        { url = "https://example.com/vendor-data", sha256 = "&lt;64 hex chars&gt;",
+          filename = "vendor-data" },
+    },
+    verbose = true,                    -- optional: stream the customize VM's console
+
+    build_args = {
+        "-m", "2048", "-smp", "2", "-cpu", "host", "-enable-kvm",
+        { "-drive",  "file={{ img_self }},if=virtio" },
+        "-cdrom",    "{{ cloud_init_iso }}",
+        "-boot",     "order=c",
+    },
+}
+</code></pre>
+<p>Optional: <code>sources</code> (extra <code>{ url =, sha256 =, filename = }</code> files grafted
+into the ISO) and <code>verbose</code> (stream the customize VM’s serial console).</p>
+<h3 id="templates"><a class="header" href="#templates">Templates</a></h3>
+<p>A template renders by one rule: <code>{{ name }}</code> expands to <code>env[name]</code>; a name
+absent from the env is a spec error. No further syntax. <code>user-data</code> for a
+Fedora-style base looks like:</p>
+<pre><code class="language-yaml">users:
+  - name: root
+    lock_passwd: false
+    hashed_passwd: {{ root_password_hash }}
+    ssh_authorized_keys:
+      - {{ ssh_public_key }}
+</code></pre>
+<p>The customize VM must power itself off — the user-data ends with <code>poweroff:</code>
+(or issues the shutdown). Inside <code>build_args</code>, two substitutions:
+<code>{{ img_self }}</code> (the working image) and <code>{{ cloud_init_iso }}</code> (the ISO).
+The customize VM obeys <code>timeout_s</code> (default 600).</p>
+<h2 id="custom-builders"><a class="header" href="#custom-builders">Custom builders</a></h2>
+<pre><code class="language-lua">local img = require("pkgs/qemu/img")
+
+img.register_builder("my-builder",
+    -- build: produce the image file; returns its path
+    function(with, ctx)
+        -- ctx = { name, state_dir, env, force, exec, stage }
+        return ctx.state_dir .. "/image"
+    end,
+    -- manifest (optional): what invalidates a rebuild
+    function(with, ctx) return { size = with.img_size } end)
+</code></pre>
+<p>A builder is a <em>build</em> function and an optional <em>manifest</em> function. <code>ctx</code>
+carries the state dir, the assembled env, a <code>stage</code> helper for per-stage
+caching, and an <code>exec</code> helper. The two built-ins are implemented with
+exactly this interface.</p>
+<p><code>with.builder</code> also accepts a function directly — the function <em>is</em> the
+builder; pair it with <code>with.builder_manifest</code> for caching. Builders stay
+inside this package’s surface: there is no export path through the package
+system.</p>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="snapshots"><a class="header" href="#snapshots">Snapshots</a></h1>
+<p>A <strong>snapshot</strong> is a VM’s full live state — RAM and device state — <em>baked
+into its disk image</em> under a tag. This is QEMU’s internal-snapshot
+mechanism: QMP <code>snapshot-save</code> / <code>snapshot-load</code> (<code>savevm</code>/<code>loadvm</code>), and
+<code>-loadvm &lt;tag&gt;</code> on the command line.</p>
+<p>The shape this gives workflows: bring a VM to a known state, snapshot it,
+then boot VMs resuming <em>from the snapshot in the image</em> — skipping boot —
+use them, throw them away.</p>
+<p><strong>Requirement.</strong> All writable block devices of the VM must support internal
+snapshots — in practice: qcow2, including the overlay disks <code>qemu:vm</code>
+creates. A VM with a raw or otherwise snapshot-uncapable writable device
+gets a step failure quoting QMP’s error and naming the device.</p>
+<h2 id="capturing-qemusavevm"><a class="header" href="#capturing-qemusavevm">Capturing: <code>qemu:savevm</code></a></h2>
+<pre><code class="language-lua">local snap = step {
+    name = "snapshot the VM",
+    uses = "qemu:savevm",
+    with = {
+        vm  = vm.out.handle,   -- handle or name; must be running
+        tag = "ready-state",   -- optional; default: timestamped tag
+    },
+}
+-- snap.out.snapshot == "ready-state"   (the tag)
+</code></pre>
+<p>The guest is quiesced for the capture and keeps running after. The snapshot
+lives <em>in the image file</em>: it survives the VM dying and <code>makac</code> exiting,
+and travels with the image — copy the image, the snapshot comes along.
+Captures have a <code>timeout_s</code> (default 300).</p>
+<h2 id="resuming-qemuloadvm"><a class="header" href="#resuming-qemuloadvm">Resuming: <code>qemu:loadvm</code></a></h2>
+<pre><code class="language-lua">local vm2 = step {
+    name = "resume vm",
+    uses = "qemu:loadvm",
+    with = {
+        name     = "testvm",
+        qemu_bin = qemu_bin,
+        args     = saved_args,          -- the machine config the snapshot was taken with
+        snapshot = snap.out.snapshot,   -- required: the tag
+        state    = "started",           -- "started" (default) | "restarted"
+        ssh      = { port = 2222 },     -- optional, as in qemu:vm
+    },
+}
+</code></pre>
+<p><code>qemu:loadvm</code> is <code>qemu:vm</code> with one additional input: <code>snapshot</code> makes the
+launch append <code>-loadvm &lt;tag&gt;</code>, so the guest resumes where it was captured
+rather than booting.</p>
+<ul>
+<li>The caller supplies <code>args</code>. Resuming requires the machine configuration
+the snapshot was taken with — the image records state, not configuration.
+Control interfaces (pidfile, sockets, serial log) are exempt and may
+differ freely.</li>
+<li>The image holding the tag must be the one the VM’s disks resolve to. For
+an overlay-booted VM the snapshot lives in <code>.makac/qemu/&lt;name&gt;/disk.qcow2</code>
+— so resume on the <strong>same VM name</strong> (same run dir), and <code>qemu:loadvm</code>
+<em>keeps</em> the existing overlay rather than recreating it.</li>
+<li><code>state = "started"</code> on a running VM is idempotent, as with <code>qemu:vm</code>. The
+canonical invocation includes the snapshot tag, so “same VM, new tag” is a
+different invocation and must be spelled <code>state = "restarted"</code>.</li>
+<li>A tag not present in the image fails at launch — QEMU exits, and the step
+failure quotes the qemu-stderr log.</li>
+</ul>
+<h2 id="housekeeping"><a class="header" href="#housekeeping">Housekeeping</a></h2>
+<p>Deleting a snapshot is a QMP command through the existing surface:</p>
+<pre><code class="language-lua">step {
+    uses = "qemu:qmp/send",
+    with = {
+        vm = vm.out.handle,
+        commands = {
+            { execute = "snapshot-delete",
+              arguments = { name = "old-tag", devices = { } } },
+        },
+    },
+}
+</code></pre>
+<h2 id="the-boot-once-test-many-loop"><a class="header" href="#the-boot-once-test-many-loop">The boot-once, test-many loop</a></h2>
+<p>The canonical use — see <a href="#the-nvme-snapshot--hotplug-test-loop">the NVMe test loop</a>:</p>
+<ol>
+<li>build an image, boot it once,</li>
+<li><code>qemu:savevm</code> a <code>"base"</code> tag,</li>
+<li>stop the VM,</li>
+<li>for each test: <code>qemu:loadvm</code> from <code>"base"</code> (seconds, not minutes),
+run the test, <code>qemu:vm state = "stopped"</code>.</li>
+</ol>
+<p>Each test starts at a known, deterministic machine state — no re-boot, no
+re-provisioning.</p>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="qmp"><a class="header" href="#qmp">QMP</a></h1>
+<p>QMP is QEMU’s control protocol: JSON over a unix socket — the socket every
+<code>qemu:vm</code> VM opens at <code>.makac/qemu/&lt;name&gt;/qmp.socket</code>. The package surfaces
+it as three actions and a library, and a workflow writes and reads <strong>Lua
+tables throughout</strong> — the JSON wire format is not part of its surface.</p>
+<h2 id="the-connection-model"><a class="header" href="#the-connection-model">The connection model</a></h2>
+<p>A started VM has exactly one QMP connection, opened by <code>qemu:vm</code> as part of
+starting it and held until the handle is closed (stop succeeding, or the
+run ending). All qmp actions against the VM share it; commands and polls
+serialize on it in step order. A run that <em>attaches</em> to an already-running
+VM by name opens its connection at attach time.</p>
+<p>Events reach the buffer only while connected: anything QEMU emitted between
+runs, or before the run attached, is never received. To observe an event,
+arrange to poll <em>after</em> the step that raises it.</p>
+<h2 id="qemuqmpsend"><a class="header" href="#qemuqmpsend"><code>qemu:qmp/send</code></a></h2>
+<p>Send commands to a VM, in array order:</p>
+<pre><code class="language-lua">local res = step {
+    name = "attach 4k test namespace",
+    uses = "qemu:qmp/send",
+    with = {
+        vm = vm.out.handle,   -- a handle, or a plain VM name
+        commands = {
+            { execute = "device_add", arguments = { driver = "nvme-subsys", id = "subsys.test" } },
+            { execute = "device_add", arguments = { driver = "nvme", id = "nvme-ctrl.2",
+                                                     serial = "test", bus = "pcie-root-port.2",
+                                                     subsys = "subsys.test" } },
+            { execute = "blockdev-add", arguments = { ["node-name"] = "bdev.test",
+                                                      driver = "raw", ... } },
+        },
+        on_error = "fail",   -- "fail" (default) | "collect"
+    },
+}
+-- res.out.results == { { ["return"] = ... }, ... }   -- one per command, in order
+</code></pre>
+<ul>
+<li>Each command is <code>{ execute = "&lt;qmp command&gt;", arguments = {...}? }</code>.
+<code>arguments</code> nests freely; key names pass verbatim — QMP keys like
+<code>node-name</code> need bracket syntax but otherwise just work.</li>
+<li>A QMP error reply yields <code>error = { class =, desc = }</code>. <code>on_error = "fail"</code> aborts the step at the first failure (remaining commands are not
+sent); <code>"collect"</code> runs them all and carries failures in
+<code>out.results[i].error</code>.</li>
+<li>Sending <strong>discards the event buffer</strong> — a new command declares that
+events before it are not of interest. Events arriving while the command
+is in flight are buffered and observed with <code>poll</code>.</li>
+</ul>
+<h2 id="qemuqmppoll-and-qemuqmpconsume"><a class="header" href="#qemuqmppoll-and-qemuqmpconsume"><code>qemu:qmp/poll</code> and <code>qemu:qmp/consume</code></a></h2>
+<p>Alongside command replies, the connection receives asynchronous events
+(<code>DEVICE_DELETED</code>, <code>RESET</code>, …). They accumulate in a per-VM buffer, and
+two actions manage them:</p>
+<pre><code class="language-lua">local p = step {
+    uses = "qemu:qmp/poll",
+    with = { vm = vm.out.handle, timeout_s = 5 },   -- listen up to 5s; default 0
+}
+-- p.out.events == { { name = "DEVICE_DELETED", data = {...} }, ... }
+</code></pre>
+<pre><code class="language-lua">step {
+    uses = "qemu:qmp/consume",
+    with = { vm = vm.out.handle, n = #p.out.events },  -- discard the n oldest
+}
+</code></pre>
+<p>The discipline:</p>
+<ul>
+<li><code>poll</code> drains the socket (bounded by <code>timeout_s</code>; a timeout is <strong>not</strong> an
+error — it returns with what arrived). <code>out.events</code> is the VM’s <strong>pending
+events</strong> — the whole buffer after the drain, including events that arrived
+while an earlier <code>send</code> awaited its replies. They <strong>remain in the buffer</strong>:
+what a poll shows is exactly what a matching <code>consume(n)</code> discards.</li>
+<li><code>consume</code> discards the <code>n</code> oldest buffered events — the ones the workflow
+has finished treating (it knows their count from a poll).</li>
+<li><code>send</code> discards the buffer at the moment it issues its commands.</li>
+</ul>
+<p>The typical pattern — raise a condition, then witness it:</p>
+<pre><code class="language-lua">step {
+    uses = "qemu:qmp/send",
+    with = { vm = vm.out.handle,
+             commands = { { execute = "device_del", arguments = { id = "ns.test" } } } },
+}
+local p = step { uses = "qemu:qmp/poll",
+                 with = { vm = vm.out.handle, timeout_s = 10 } }
+assert(p.out.events[1].name == "DEVICE_DELETED")
+step { uses = "qemu:qmp/consume",
+       with = { vm = vm.out.handle, n = #p.out.events } }
+</code></pre>
+<h2 id="the-library"><a class="header" href="#the-library">The library</a></h2>
+<p><code>require("pkgs/qemu/qmp")</code> constructs command tables. <strong>It performs no I/O</strong>
+— there is no socket, no target VM, no sending. Constructors map arguments
+to a <code>{ execute = ..., arguments = ... }</code> table, which a workflow passes to
+<code>qemu:qmp/send</code> — the only place commands are sent, and the only place a VM
+is named:</p>
+<pre><code class="language-lua">local qmp = require("pkgs/qemu/qmp")
+
+step {
+    uses = "qemu:qmp/send",
+    with = {
+        vm = vm.out.handle,
+        commands = {
+            qmp.dev_add("nvme", { id = "nvme-ctrl.2", serial = "test" }),
+            qmp.bdev_add("bdev.test", "raw", { file = { driver = "file", filename = "x.img" } }),
+        },
+    },
+}
+</code></pre>
+<p>Constructors:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>constructor</th><th>builds</th></tr>
+</thead>
+<tbody>
+<tr><td><code>qmp.dev_add(driver, args)</code></td><td><code>device_add</code> with <code>driver</code> injected</td></tr>
+<tr><td><code>qmp.bdev_add(node, driver, args)</code></td><td><code>blockdev-add</code> with <code>node-name</code>/<code>driver</code> injected</td></tr>
+<tr><td><code>qmp.hmp("savevm mysnapshot")</code></td><td><code>human-monitor-command</code></td></tr>
+<tr><td><code>qmp.query_status()</code></td><td><code>query-status</code></td></tr>
+<tr><td><code>qmp.merge(tables)</code></td><td>a fresh shallow merge of the tables (later sources win)</td></tr>
+<tr><td><code>qmp.ok(result)</code></td><td><code>result.error == nil</code></td></tr>
+<tr><td><code>qmp.err_desc(result)</code></td><td>the error description</td></tr>
+</tbody>
+</table>
+</div>
+<p>Because they are pure table-builders they compose with ordinary Lua
+(merging, loops, conditionals), and the same command table can be sent to
+any number of VMs by any number of <code>qemu:qmp/send</code> steps. The <code>merge</code> the
+constructors are built on is exposed too, for compositions that reuse it
+for their own option tables.</p>
+<h2 id="hotplug-notes"><a class="header" href="#hotplug-notes">Hotplug notes</a></h2>
+<p>Two QEMU facts worth stating:</p>
+<ul>
+<li><strong><code>addr</code> is a string.</strong> To give a device a deterministic PCI BDF, pass
+<code>addr</code> explicitly — and as a string (<code>addr = "0.0"</code>), never a number. The
+guest then finds the device at a known address, pollable over ssh
+(<code>lspci -nn</code>).</li>
+<li><strong>Q35 cannot hotplug PCIe root ports.</strong> The buses devices attach to must
+exist from boot: pre-create them in the VM’s <code>args</code> (<code>pcie-root-port</code>
+devices with ids) and hotplug onto those buses. Snapshotting after boot
+freezes this topology into base state, so every resumed VM has the ports
+ready.</li>
+</ul>
+<p>Waiting for a <em>guest-side</em> condition is expressed with polls from steps:
+<code>poll</code>/<code>consume</code> when there’s a QMP event; a ssh shell loop or
+<code>serial.wait_for</code> when the evidence is inside the guest.</p>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="reference"><a class="header" href="#reference">Reference</a></h1>
+<p>The precise reference for the package’s actions and library modules.
+Concepts are explained on the <a href="#concepts">Concepts</a> pages; here
+every input (<code>with</code>) and output (<code>out</code>) is spelled out.</p>
+<ul>
+<li><a href="#actions-at-a-glance">Actions at a glance</a> — the full action table, result shapes,
+common <code>with</code> fields.</li>
+<li><a href="#qemuvm"><code>qemu:vm</code></a> — states, args, overlay disks, ssh target.</li>
+<li><a href="#qemuprobe"><code>qemu:probe</code></a> — read a VM’s status; never <code>changed</code>, never
+fails on a down/wedged VM.</li>
+<li><a href="#qemuloadvm"><code>qemu:loadvm</code></a> — resume from a snapshot.</li>
+<li><a href="#qemusavevm"><code>qemu:savevm</code></a> — capture a snapshot.</li>
+<li><a href="#qemuqmpsend-qemuqmppoll-qemuqmpconsume"><code>qemu:qmp/send</code>, <code>poll</code>, <code>consume</code></a> — the QMP actions.</li>
+<li><a href="#qemuimg"><code>qemu:img</code></a> — image builders.</li>
+<li><a href="#library-modules">Library modules</a> — <code>pkgs/qemu/qmp</code>, <code>pkgs/qemu/img</code>,
+<code>pkgs/qemu/serial</code>.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="actions-at-a-glance"><a class="header" href="#actions-at-a-glance">Actions at a glance</a></h1>
+<p>All eight actions, their <code>with</code> and <code>out</code> in one place.</p>
+<h2 id="the-result-shape"><a class="header" href="#the-result-shape">The result shape</a></h2>
+<p>Every action returns the normalized makac result shape:</p>
+<pre><code class="language-lua">{
+    err = nil,       -- string, set iff the action failed; absent otherwise
+    changed = false, -- bool
+    skipped = false, -- bool
+    out = {},        -- table: action-specific values
+}
+</code></pre>
+<h2 id="common-fields"><a class="header" href="#common-fields">Common fields</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>field</th><th>meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>with.vm</code></td><td>the VM: a name (string) or a previous <code>out.handle</code> (table) — one key, either value.</td></tr>
+<tr><td><code>with.run_dir</code></td><td>optional override of the VM’s runtime directory (default <code>.makac/qemu/&lt;name&gt;</code>).</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>qemu:vm</code> and <code>qemu:loadvm</code> accept the same <code>with.vm</code> key (the historical
+<code>with.name</code>/<code>with.handle</code> pair was replaced by it — pass <code>with.vm</code>; giving
+it neither is a failure).</p>
+<h2 id="action-table"><a class="header" href="#action-table">Action table</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>action</th><th><code>with</code></th><th><code>out</code></th></tr>
+</thead>
+<tbody>
+<tr><td><a href="#qemuvm"><code>qemu:vm</code></a></td><td><code>vm</code>, <code>state?</code>, <code>qemu_bin</code>, <code>args</code>, <code>ssh?</code>, <code>disk?</code>, <code>wait_ssh?</code>, <code>guest_shutdown?</code>, <code>force?</code></td><td><code>handle</code>, <code>target?</code>, <code>pid</code>, <code>disk?</code>, status fields</td></tr>
+<tr><td><a href="#qemuprobe"><code>qemu:probe</code></a></td><td><code>vm</code></td><td><code>handle</code>, <code>pid</code>, status fields</td></tr>
+<tr><td><a href="#qemuloadvm"><code>qemu:loadvm</code></a></td><td><code>vm</code>, <code>state?</code>, <code>snapshot</code>, <code>qemu_bin</code>, <code>args</code>, <code>ssh?</code>, <code>disk?</code>, <code>wait_ssh?</code></td><td><code>handle</code>, <code>target?</code>, <code>pid</code>, <code>disk?</code>, status fields</td></tr>
+<tr><td><a href="#qemusavevm"><code>qemu:savevm</code></a></td><td><code>vm</code>, <code>tag?</code>, <code>timeout_s?</code></td><td><code>snapshot</code> (the tag)</td></tr>
+<tr><td><a href="#qemuqmpsend-qemuqmppoll-qemuqmpconsume"><code>qemu:qmp/send</code></a></td><td><code>vm</code>, <code>commands</code>, <code>on_error?</code></td><td><code>results</code> (one per command)</td></tr>
+<tr><td><a href="#qemuqmpsend-qemuqmppoll-qemuqmpconsume"><code>qemu:qmp/poll</code></a></td><td><code>vm</code>, <code>timeout_s?</code></td><td><code>events</code></td></tr>
+<tr><td><a href="#qemuqmpsend-qemuqmppoll-qemuqmpconsume"><code>qemu:qmp/consume</code></a></td><td><code>vm</code>, <code>n</code></td><td>—</td></tr>
+<tr><td><a href="#qemuimg"><code>qemu:img</code></a></td><td><code>name</code>, <code>builder</code>, builder-specific keys</td><td><code>path</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Every action takes a <code>run_dir</code> override when it addresses a VM.</p>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="qemuvm"><a class="header" href="#qemuvm"><code>qemu:vm</code></a></h1>
+<p>Bring a VM to a state: <code>started</code>, <code>stopped</code>, or <code>restarted</code>. The
+workhorse action of the package.</p>
+<h2 id="with"><a class="header" href="#with"><code>with</code></a></h2>
+<pre><code class="language-lua">with = {
+    vm = "testvm",                  -- identity: a VM name or a previous
+                                    -- out.handle (one key, either value)
+    state = "started",               -- "started" (default) | "stopped" | "restarted"
+
+    -- required for "started"/"restarted":
+    qemu_bin = "/usr/bin/qemu-system-x86_64",
+    args = {                         -- QEMU argv (see Concepts: VMs)
+        "-nodefaults",
+        "-machine", "q35,accel=kvm",
+        -- ...
+    },
+
+    -- optional:
+    ssh = {                          -- enable out.target; see below
+        port = 2222,                 -- host-assigned port (required)
+        user = "root",               -- global VM_SSH_USER; default "root"
+        identity_file = "...",       -- global VM_SSH_IDENTITY_FILE
+        options = { StrictHostKeyChecking = "no" },
+    },
+    disk = { backing = img.out.path },  -- boot on a throwaway overlay
+                                        -- (see Concepts: Overlay boot disks;
+                                        -- `path = "..."` puts the overlay elsewhere)
+    wait_ssh = { timeout_s = 120, interval_s = 2 },  -- default: wait
+    -- wait_ssh = false,              -- return as soon as QEMU is launched
+
+    guest_shutdown = false,          -- optional; on "stopped", skip the guest
+                                     -- powerdown handshake (default true)
+    force = true,                    -- optional; teardown escalation (default true)
+    run_dir = "...",                 -- override the runtime directory
+}
+</code></pre>
+<p><code>state = "stopped"</code> ignores <code>ssh</code>/<code>disk</code>/<code>qemu_bin</code>/<code>args</code> — only the
+identity and <code>run_dir</code> matter.</p>
+<h2 id="out"><a class="header" href="#out"><code>out</code></a></h2>
+<pre><code class="language-lua">out = {
+    handle = &lt;handle table&gt;,   -- pass to later VM actions
+    target = &lt;remote target&gt; or nil,   -- iff ssh configured
+    pid    = 1234,
+    disk   = { backing = "...", path = "..." } or nil,  -- resolved overlay, if used
+    -- status probe fields (see Concepts: VMs):
+    alive         = true,
+    running       = true,
+    qmp_connected = true,
+    runstate      = "running",
+}
+</code></pre>
+<p><code>changed</code> is <code>true</code> when the step actually started/stopped the VM, <code>false</code>
+for a no-op (<code>started</code> on an already-running same-invocation VM, <code>stopped</code>
+on a not-running VM).</p>
+<h2 id="states-1"><a class="header" href="#states-1">States</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>state</th><th>semantics</th></tr>
+</thead>
+<tbody>
+<tr><td><code>started</code></td><td>launch; no-op if running the same invocation. Errors if running a <em>different</em> invocation — that’s <code>restarted</code>.</td></tr>
+<tr><td><code>stopped</code></td><td>graceful: QMP <code>system_powerdown</code>, poll <code>query-status</code> up to <code>timeout_s</code> (default 20). With <code>with.guest_shutdown = false</code>, skip that handshake and stop by QMP <code>quit</code>. Then, when <code>force</code> (default <code>true</code>): QMP <code>quit</code>, then <code>kill -9</code> the pidfile pid. On success, remove runtime files, close the handle’s QMP connection.</td></tr>
+<tr><td><code>restarted</code></td><td>stop then start, unconditionally. Recreates the overlay disk (except when resuming from a snapshot — see <code>qemu:loadvm</code>).</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>with.force</code> (default <code>true</code>) controls the escalation in <code>stopped</code>.</p>
+<h2 id="errors"><a class="header" href="#errors">Errors</a></h2>
+<ul>
+<li><code>state</code> not one of the three, or <code>name</code>+<code>handle</code> both given / neither
+given → spec failure.</li>
+<li><code>started</code>/<code>restarted</code> without <code>qemu_bin</code> or <code>args</code> → spec failure.</li>
+<li>A <code>-pidfile</code>/<code>-monitor</code>/<code>-serial</code>/<code>-qmp</code> in <code>args</code> → spec error (these are
+injected).</li>
+<li>A launch that exits immediately (bad args, missing image) → step failure
+quoting the qemu-stderr log.</li>
+<li>The QMP socket never appearing within the launch window → step failure
+(QEMU is up but not controllable).</li>
+<li><code>wait_ssh</code> timeout → step failure naming the serial log.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="qemuprobe"><a class="header" href="#qemuprobe"><code>qemu:probe</code></a></h1>
+<p>Read a VM’s status: liveness, pid, runstate. The read-only action of the
+package — <code>ok</code>, never <code>changed</code>, and never a failure on a down or wedged
+VM: those are <strong>data</strong>, not errors.</p>
+<h2 id="with-1"><a class="header" href="#with-1"><code>with</code></a></h2>
+<pre><code class="language-lua">with = {
+    vm = "testvm",        -- a VM name or a previous out.handle
+    run_dir = "...",      -- optional override
+}
+</code></pre>
+<h2 id="out-1"><a class="header" href="#out-1"><code>out</code></a></h2>
+<p>The same status shape <code>qemu:vm</code> reports:</p>
+<pre><code class="language-lua">out = {
+    handle = &lt;handle table&gt;,   -- pass to later VM actions
+    pid    = 1234 or nil,      -- from the pidfile, if present &amp; valid
+    alive  = true,             -- the process exists (QMP or pid evidence)
+    running = true or nil,     -- vCPUs executing; QMP-derived only
+    qmp_connected = true,      -- was QMP reachable in this probe?
+    runstate = "running",      -- "running"|"paused"|... or nil
+}
+</code></pre>
+<h2 id="rules"><a class="header" href="#rules">Rules</a></h2>
+<ul>
+<li><strong>The probe order</strong> is QMP first (<code>query-status</code>), pidfile second. When
+this run already holds a connection to the VM, the probe uses it; a VM
+started outside this run gets a transient connection, opened and closed
+by the probe.</li>
+<li><strong>Down and wedged are results, not errors.</strong> <code>alive = false</code> means down
+(no pidfile, or a dead pid). <code>alive = true</code> with <code>running = nil</code> and
+<code>qmp_connected = false</code> is the “wedged” signature — process there, QMP
+unresponsive. Only invalid input (a missing or malformed <code>with.vm</code>)
+fails the step.</li>
+<li><strong>The send caveat.</strong> Probing through this run’s <em>attached</em> connection
+clears its buffered events — the same as any <code>qemu:qmp/send</code> (see
+<a href="#qemuqmpsend-qemuqmppoll-qemuqmpconsume"><code>qemu:qmp/send</code>, <code>poll</code>, <code>consume</code></a>). Don’t probe between a
+<code>poll</code> and its <code>consume</code>.</li>
+</ul>
+<h2 id="typical-use-workflow-policy"><a class="header" href="#typical-use-workflow-policy">Typical use: workflow policy</a></h2>
+<p>The action exists so workflows spell liveness decisions over step output
+instead of reaching into the package’s internals:</p>
+<pre><code class="language-lua">local p = step { name = "probe testvm", uses = "qemu:probe", with = { vm = "testvm" } }
+if p.out.alive then
+    print(("already running (pid %s) — no-op"):format(tostring(p.out.pid)))
+    return
+end
+</code></pre>
+<pre><code class="language-lua">local p = step { uses = "qemu:probe", with = { vm = "testvm" } }
+assert(not p.out.alive, "testvm must be down to re-seed its disk")
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="qemuloadvm"><a class="header" href="#qemuloadvm"><code>qemu:loadvm</code></a></h1>
+<p>Boot a VM resuming from a snapshot — <code>qemu:vm</code>’s start choreography with
+one additional input: <code>with.snapshot</code>, the tag captured by
+<a href="#qemusavevm"><code>qemu:savevm</code></a>. The launch appends <code>-loadvm &lt;tag&gt;</code>; the guest
+resumes where it was captured instead of booting.</p>
+<h2 id="with-2"><a class="header" href="#with-2"><code>with</code></a></h2>
+<pre><code class="language-lua">with = {
+    vm = "testvm",                  -- identity: a VM name or a handle
+    state = "started",               -- "started" (default) | "restarted"
+    snapshot = "ready-state",        -- required: the tag from qemu:savevm
+
+    qemu_bin = "/usr/bin/qemu-system-x86_64",   -- required
+    args = { ... },                  -- required: the machine config the
+                                     -- snapshot was taken with
+
+    ssh  = { port = 2222 },          -- optional, as in qemu:vm
+    disk = { backing = img.out.path },   -- optional
+    wait_ssh = { timeout_s = 120 },  -- optional, as in qemu:vm
+    run_dir = "...",                 -- optional override
+}
+</code></pre>
+<p>No <code>"stopped"</code> state here — stopping is <code>qemu:vm</code>’s.</p>
+<h2 id="out-2"><a class="header" href="#out-2"><code>out</code></a></h2>
+<p>Same as <a href="#qemuvm"><code>qemu:vm</code></a>: <code>handle</code>, <code>target?</code>, <code>pid</code>, <code>disk?</code>, status
+fields.</p>
+<h2 id="rules-1"><a class="header" href="#rules-1">Rules</a></h2>
+<ul>
+<li>
+<p><strong>Same VM name as the save side.</strong> The snapshot lives in the VM’s disk
+image; for an overlay-booted VM that’s the disk that VM was saved from —
+either the default <code>&lt;run_dir&gt;/disk.qcow2</code> or whatever <code>with.disk.path</code>
+the save side used. Resume on that same path, and <code>qemu:loadvm</code> <strong>keeps
+the existing overlay</strong> rather than recreating it — recreating would
+destroy the snapshot.</p>
+</li>
+<li>
+<p><strong>Idempotence = invocation identity.</strong> At launch the package writes the
+canonical invocation — <code>qemu_bin</code>, the flattened <code>args</code>, and the
+<code>-loadvm &lt;tag&gt;</code> it appends — to <code>&lt;run_dir&gt;/invocation</code>. Every
+<code>state = "started"</code> request against an <em>already-running</em> VM byte-compares
+the requested invocation against that file:</p>
+<ul>
+<li><strong>identical → no-op.</strong> The VM is already running exactly what was asked
+for; the step returns the handle with <code>changed = false</code> (ssh target
+still set up). This is what makes <code>loadvm</code> idempotent: the step is
+safe to re-run — “ensure the VM is running from snapshot X”.</li>
+<li><strong>different → step failure.</strong> The VM is running a <em>different</em>
+invocation (other args, other tag, or a plain boot); the failure
+names the difference and points at <code>state = "restarted"</code>. Nothing is
+silently re-launched underneath a running VM.</li>
+</ul>
+</li>
+<li>
+<p><strong>The tag is part of the identity.</strong> “Same VM, new tag” is a different
+invocation, so <code>state = "started"</code> against a VM already running from
+another tag fails instead of quietly resuming the new one. Switching
+snapshots (or switching a running VM to a plain boot and back) is
+spelled <code>state = "restarted"</code> — stop unconditionally, then resume.</p>
+</li>
+<li>
+<p><strong>Caller supplies <code>args</code>.</strong> The snapshot records guest state (RAM,
+devices) in the image — not the QEMU command line; there is nothing in
+the image to recover the machine config from. The <code>args</code> you pass are
+part of the identity, compared byte-for-byte (after flattening and
+<code>{{ disk }}</code> substitution). Only the package-injected control wiring —
+pidfile, monitor/serial/qmp sockets — is outside the identity and may
+differ freely.</p>
+</li>
+<li>
+<p>A tag not present in the image fails at launch: QEMU exits early, and the
+step failure quotes the qemu-stderr log.</p>
+</li>
+</ul>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<pre><code class="language-lua">local resumed = step {
+    name = "resume from snapshot",
+    uses = "qemu:loadvm",
+    with = {
+        vm       = "testvm",
+        qemu_bin = qemu_bin,
+        args     = vm_args,          -- same machine as the save side
+        snapshot = snap.out.snapshot,  -- -loadvm base_snapshot
+        state    = "restarted",      -- fresh qemu process
+        ssh      = { port = 2222 },
+    },
+}
+local target = resumed.out.target    -- an ordinary makac remote target
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="qemusavevm"><a class="header" href="#qemusavevm"><code>qemu:savevm</code></a></h1>
+<p>Capture a running VM’s full live state — RAM + device state — into its disk
+image under a tag, via QMP <code>snapshot-save</code>. The guest is quiesced for the
+capture and keeps running after. The snapshot lives <em>in the image file</em>: it
+survives the VM dying and <code>makac</code> exiting, and travels with the image.</p>
+<h2 id="with-3"><a class="header" href="#with-3"><code>with</code></a></h2>
+<pre><code class="language-lua">with = {
+    vm  = vm.out.handle,   -- required: a handle or a plain VM name
+    tag = "ready-state",   -- optional; default: a timestamped tag
+    timeout_s = 300,       -- optional; capture job timeout in seconds
+    run_dir = "...",       -- optional override
+}
+</code></pre>
+<h2 id="out-3"><a class="header" href="#out-3"><code>out</code></a></h2>
+<pre><code class="language-lua">out = {
+    snapshot = "ready-state",   -- the tag; pass to qemu:loadvm
+}
+</code></pre>
+<p><code>changed</code> is always <code>true</code>.</p>
+<h2 id="errors-1"><a class="header" href="#errors-1">Errors</a></h2>
+<ul>
+<li>The VM must be <strong>running</strong>; anything else is a step failure quoting the
+status probe (down, wedged, or paused are all “not running”).</li>
+<li>A QMP error (snapshot-uncapable device, duplicate tag, …) is a step
+failure naming the command and QMP’s error description.</li>
+<li>The capture job exceeding <code>timeout_s</code> is a step failure.</li>
+</ul>
+<h2 id="requirements-1"><a class="header" href="#requirements-1">Requirements</a></h2>
+<p>All writable block devices of the VM must support internal snapshots — in
+practice: qcow2, including the overlay disks <code>qemu:vm</code> creates. A VM with a
+raw or otherwise snapshot-uncapable writable device gets a step failure
+quoting QMP’s error and naming the device.</p>
+<h2 id="example-1"><a class="header" href="#example-1">Example</a></h2>
+<pre><code class="language-lua">local snap = step {
+    name = "snapshot booted state",
+    uses = "qemu:savevm",
+    with = { vm = vm.out.handle, tag = "base_snapshot" },
+}
+assert(snap.err == nil, tostring(snap.err))
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="qemuqmpsend-qemuqmppoll-qemuqmpconsume"><a class="header" href="#qemuqmpsend-qemuqmppoll-qemuqmpconsume"><code>qemu:qmp/send</code>, <code>qemu:qmp/poll</code>, <code>qemu:qmp/consume</code></a></h1>
+<p>The three QMP actions. QMP is QEMU’s control protocol; the package’s QMP
+surface is explained in <a href="#qmp">Concepts: QMP</a>.</p>
+<h2 id="qemuqmpsend-1"><a class="header" href="#qemuqmpsend-1"><code>qemu:qmp/send</code></a></h2>
+<p>Send commands to a VM, in array order, on the VM’s connection.</p>
+<pre><code class="language-lua">with = {
+    vm = vm.out.handle,      -- required: handle or VM name
+    commands = {             -- required: non-empty array of command tables
+        { execute = "device_add", arguments = { driver = "nvme", id = "nvme0" } },
+    },
+    on_error = "fail",       -- "fail" (default) | "collect"
+}
+</code></pre>
+<pre><code class="language-lua">out = {
+    results = {              -- one per command, in order
+        { ["return"] = {...} or nil,       -- the command's return payload
+          error = { class = ..., desc = ... } or nil },
+    },
+}
+</code></pre>
+<ul>
+<li>Each command must be a table with a string <code>execute</code>; <code>arguments</code> is an
+optional table that nests freely.</li>
+<li><code>on_error = "fail"</code>: the first error reply aborts the step (remaining
+commands are not sent), message naming the command and QMP’s <code>desc</code>.
+<code>"collect"</code>: execution continues; failures land in
+<code>out.results[i].error</code>.</li>
+<li>A VM whose QMP socket doesn’t connect is a step failure naming the VM
+and its socket.</li>
+<li>Sending discards the event buffer (see Concepts: QMP).</li>
+</ul>
+<p><code>changed</code> is always <code>true</code>.</p>
+<h2 id="qemuqmppoll"><a class="header" href="#qemuqmppoll"><code>qemu:qmp/poll</code></a></h2>
+<p>Drain pending events from the VM’s event stream, bounded by a timeout.</p>
+<pre><code class="language-lua">with = {
+    vm = vm.out.handle,      -- required: handle or VM name
+    timeout_s = 5,           -- how long to listen; default 0
+}
+</code></pre>
+<pre><code class="language-lua">out = {
+    events = {               -- the VM's pending events after the drain
+        { name = "DEVICE_DELETED", data = { ... } },
+    },
+}
+</code></pre>
+<p>A timeout is <strong>not</strong> an error — the action returns with whatever arrived.
+<code>out.events</code> is the VM’s <strong>pending events</strong> — the whole buffer after the
+drain, including events that arrived while an earlier <code>send</code> awaited its
+replies. They remain in the buffer: what the step shows is exactly what a
+matching <code>consume(n)</code> discards.</p>
+<p><code>changed</code> is always <code>false</code> (polling changes nothing).</p>
+<h2 id="qemuqmpconsume"><a class="header" href="#qemuqmpconsume"><code>qemu:qmp/consume</code></a></h2>
+<p>Discard the <code>n</code> oldest buffered events — the ones the workflow has finished
+treating.</p>
+<pre><code class="language-lua">with = {
+    vm = vm.out.handle,      -- required: handle or VM name
+    n = 3,                   -- required: non-negative integer
+}
+</code></pre>
+<p>Discarding more events than are buffered raises (a step failure naming the
+VM). <code>changed</code> is always <code>false</code>.</p>
+<h2 id="the-pattern-1"><a class="header" href="#the-pattern-1">The pattern</a></h2>
+<pre><code class="language-lua">-- raise a condition, then witness it
+step { uses = "qemu:qmp/send",
+       with = { vm = h, commands = { { execute = "device_del", arguments = { id = "ns0" } } } } }
+local p = step { uses = "qemu:qmp/poll", with = { vm = h, timeout_s = 10 } }
+assert(p.out.events[1].name == "DEVICE_DELETED")
+step { uses = "qemu:qmp/consume", with = { vm = h, n = #p.out.events } }
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="qemuimg"><a class="header" href="#qemuimg"><code>qemu:img</code></a></h1>
+<p>Ensure a disk image is built. Dispatches on <code>with.builder</code> — a built-in
+name, a registered custom builder, or a function. Concepts and the full
+builder semantics are on <a href="#images">Concepts: Images</a>; this
+page is the reference.</p>
+<h2 id="with-common"><a class="header" href="#with-common"><code>with</code> (common)</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>key</th><th>meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>name</code></td><td>required; identity and state-dir key</td></tr>
+<tr><td><code>builder</code></td><td>required; <code>"raw"</code>, <code>"cloud-init"</code>, a registered name, or a function</td></tr>
+<tr><td><code>state_dir</code></td><td>optional; default <code>makac.data_dir .. "/qemu/img/" .. name</code></td></tr>
+<tr><td><code>env</code></td><td>optional; k→v map merged into the build environment</td></tr>
+<tr><td><code>env_hook</code></td><td>optional; <code>function(env) -&gt; env</code>, applied after <code>env</code></td></tr>
+<tr><td><code>force</code></td><td>optional; bypass the manifest cache and rebuild</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="out-4"><a class="header" href="#out-4"><code>out</code></a></h2>
+<pre><code class="language-lua">out = {
+    path = "/abs/.../.makac/qemu/img/&lt;name&gt;/image",
+}
+</code></pre>
+<p><code>changed</code> is <code>true</code> iff any stage ran.</p>
+<h2 id="builder-raw-1"><a class="header" href="#builder-raw-1">Builder <code>raw</code></a></h2>
+<pre><code class="language-lua">with = {
+    name = "raw-1", builder = "raw",
+    img_size = "1G",     -- required
+    format   = "raw",    -- optional; default "raw"
+}
+</code></pre>
+<p>One stage: <code>qemu-img create</code> under a manifest of name/size/format.</p>
+<h2 id="builder-cloud-init-1"><a class="header" href="#builder-cloud-init-1">Builder <code>cloud-init</code></a></h2>
+<pre><code class="language-lua">with = {
+    name     = "bootbase",
+    builder  = "cloud-init",
+    qemu_bin = "qemu-system-x86_64",   -- required
+    img_size = "10G",                  -- required
+
+    base_img = {                       -- required
+        url    = "https://example.com/fedora-cloud-base.qcow2",
+        sha256 = "&lt;64 hex chars&gt;",     -- required
+    },
+
+    env = { hostname = "testbox" },    -- optional
+
+    templates = {                      -- required: at minimum user-data, meta-data
+        { template = "templates/user-data.tpl", output = "user-data" },
+        { template = "templates/meta-data.tpl", output = "meta-data" },
+    },
+
+    build_args = { ... },              -- required: throwaway VM command line
+    timeout_s = 600,                   -- optional; customize-VM timeout
+
+    sources = {                        -- optional: extra files grafted into the ISO
+        { url = "https://...", sha256 = "&lt;64 hex&gt;", filename = "vendor-data" },
+    },
+    verbose = true,                    -- optional: stream the customize VM's console
+}
+</code></pre>
+<p>Stages: download → prepare (resize, overlay) → templates → iso
+(<code>genisoimage</code>) → customize (throwaway VM powers itself off). See
+<a href="#images">Concepts: Images</a> for the template rule and the
+<code>{{ img_self }}</code> / <code>{{ cloud_init_iso }}</code> substitutions.</p>
+<h2 id="custom-builders-1"><a class="header" href="#custom-builders-1">Custom builders</a></h2>
+<p><code>with.builder</code> may be a function; pair it with <code>with.builder_manifest</code> for
+caching:</p>
+<pre><code class="language-lua">with = {
+    name = "mine", builder = function(with, ctx)
+        -- ctx = { name, state_dir, env, force, exec, stage }
+        return ctx.state_dir .. "/image"
+    end,
+    builder_manifest = function(with, ctx) return { size = with.img_size } end,
+}
+</code></pre>
+<p>Or register one for reuse:</p>
+<pre><code class="language-lua">local img = require("pkgs/qemu/img")
+img.register_builder("my-builder", build_fn, manifest_fn)
+</code></pre>
+<p>For a <code>manifest_fn</code> that depends on files or structured inputs, the module
+exports the same helpers the built-ins use:</p>
+<pre><code class="language-lua">img.hash_file(path)          -- sha256 of a file; an unreadable file hashes to
+                             -- a distinct error string, so "input gone" = changed
+img.hash_spec(value, why)    -- canonical text for a structured spec value
+img.stage(ctx, name, manifest, run)  -- the per-stage cache; true if it ran
+</code></pre>
+<p>A one-off function without a manifest runs every time.</p>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="library-modules"><a class="header" href="#library-modules">Library modules</a></h1>
+<p>The package ships three workflow-facing library modules, required as
+<code>require("pkgs/qemu/...")</code>. (Other <code>lib/</code> modules — <code>args</code>, <code>handle</code> — are
+internal.)</p>
+<h2 id="requirepkgsqemuqmp--qmp-command-constructors"><a class="header" href="#requirepkgsqemuqmp--qmp-command-constructors"><code>require("pkgs/qemu/qmp")</code> — QMP command constructors</a></h2>
+<p>Pure table-builders: <strong>no I/O</strong> — no socket, no target VM, no sending.
+They build <code>{ execute = ..., arguments = ... }</code> tables for
+<a href="#qemuqmpsend-qemuqmppoll-qemuqmpconsume"><code>qemu:qmp/send</code></a> — the only place commands are sent, and the only
+place a VM is named.</p>
+<pre><code class="language-lua">local qmp = require("pkgs/qemu/qmp")
+
+qmp.dev_add(driver, args)     -- { execute = "device_add",
+                              --   arguments = merge(args, { driver = driver }) }
+qmp.bdev_add(node, driver, args)   -- blockdev-add, node-name/driver injected
+qmp.hmp("savevm my-snapshot")      -- human-monitor-command
+qmp.query_status()                 -- { execute = "query-status" }
+
+qmp.merge(tables)             -- shallow-merge an array of tables into a
+                              -- fresh one; later sources win — the utility
+                              -- the constructors are built on
+
+qmp.ok(result)                -- result.error == nil
+qmp.err_desc(result)          -- the error description, or nil
+</code></pre>
+<p>Because they are pure, they compose with ordinary Lua — merging, loops,
+conditionals — and the same command table can be sent to any number of VMs.</p>
+<h2 id="requirepkgsqemuimg--image-builders"><a class="header" href="#requirepkgsqemuimg--image-builders"><code>require("pkgs/qemu/img")</code> — image builders</a></h2>
+<pre><code class="language-lua">local img = require("pkgs/qemu/img")
+
+img.register_builder(name, build_fn, manifest_fn)
+img.hash_file(path)                  -- sha256 of a file input (missing = distinct)
+img.hash_spec(value, why)            -- canonical text for a structured input
+img.stage(ctx, name, manifest, run)  -- the per-stage cache; true if it ran
+</code></pre>
+<p>Registers a custom builder for use by <code>with.builder = "&lt;name&gt;"</code> in
+<a href="#qemuimg"><code>qemu:img</code></a>. <code>build_fn(with, ctx)</code> produces the image and returns
+its path; <code>manifest_fn(with, ctx)</code> (optional) returns the cache key — use the
+<code>hash_*</code> helpers to turn files and spec tables into stable values.
+See <a href="#images">Concepts: Images</a>.</p>
+<h2 id="requirepkgsqemuserial--the-serial-console"><a class="header" href="#requirepkgsqemuserial--the-serial-console"><code>require("pkgs/qemu/serial")</code> — the serial console</a></h2>
+<p>Reads the guest console captured by a started VM:</p>
+<pre><code class="language-lua">local serial = require("pkgs/qemu/serial")
+
+serial.wait_for(handle_or_name, pattern, timeout_s)
+-- Poll the VM's serial log until the Lua pattern matches; on timeout, a
+-- failure quoting the log's tail. Used for "wait for login prompt",
+-- "wait for cloud-init done", device-appearance loops, ...
+
+serial.tail(handle_or_name, n)
+-- The last n lines of the serial log.
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="examples"><a class="header" href="#examples">Examples</a></h1>
+<ul>
+<li><a href="#the-nvme-snapshot--hotplug-test-loop">The NVMe snapshot + hotplug test loop</a> — the workflow
+class makac.qemu exists for: build → boot once → snapshot → per-test
+resume → hotplug → guest-side bind → run → teardown.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><!-- SPDX-FileCopyrightText: 2026 Jesper Wendel Devantier -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<h1 id="the-nvme-snapshot--hotplug-test-loop"><a class="header" href="#the-nvme-snapshot--hotplug-test-loop">The NVMe snapshot + hotplug test loop</a></h1>
+<p>This is the workflow shape the package exists for: exercise a device —
+here an NVMe controller — inside a real VM, repeatedly and fast.</p>
+<p>The pattern: <strong>boot once, snapshot, then for each test resume from the
+snapshot, hotplug an NVMe controller at a known PCI address, bind it to
+<code>vfio-pci</code> in the guest, exercise it, and tear down.</strong></p>
+<p>The values below that are site-local (QEMU binary path, ssh key, image
+URL) are placeholders — substitute your own.</p>
+<h2 id="the-machine-configuration"><a class="header" href="#the-machine-configuration">The machine configuration</a></h2>
+<p>The VM is Q35 with <strong>pre-created PCIe root ports</strong> and <strong>no NVMe devices at
+boot</strong>: Q35 cannot hotplug root ports, and the snapshot must freeze a
+topology that has empty buses ready for hotplug. The boot disk is an
+overlay over a built image (<code>{{ disk }}</code>).</p>
+<pre><code class="language-lua">local qmp = require("pkgs/qemu/qmp")
+
+local QEMU = "/path/to/qemu-system-x86_64"   -- site-local
+
+-- ssh defaults, ambient for every step in this file
+VM_SSH_USER          = "root"
+VM_SSH_IDENTITY_FILE = os.getenv("HOME") .. "/.ssh/id_ed25519"   -- site-local
+
+local base_args = {
+    "-nodefaults",
+    { "-machine", "q35,accel=kvm,kernel-irqchip=split" },
+    "-cpu", "host", "-smp", "2", "-m", "4096",
+    { "-netdev", { user = true, id = "net0", hostfwd = "tcp::2090-:22" } },
+    { "-device", "virtio-net-pci,netdev=net0" },
+    { "-device", "pcie-root-port,id=root0,chassis=1,slot=0" },
+    { "-device", "pcie-root-port,id=root1,chassis=2,slot=0" },
+    { "-device", "pcie-root-port,id=root2,chassis=3,slot=0" },
+    -- boot disk: overlay over the built image
+    { "-drive",  "id=bdrv.boot,file={{ disk }},format=qcow2,if=none" },
+    { "-device", "nvme-subsys,id=boot_subsys" },
+    { "-device", "nvme,id=nvme-boot-ctrl,serial=boot,subsys=boot_subsys" },
+    { "-device", "nvme-ns,id=nvme-boot,drive=bdrv.boot,nsid=1,bus=nvme-boot-ctrl,bootindex=0" },
+}
+</code></pre>
+<h2 id="boot-once-snapshot-stop"><a class="header" href="#boot-once-snapshot-stop">Boot once, snapshot, stop</a></h2>
+<pre><code class="language-lua">local base_img = step {
+    name = "build boot image",
+    uses = "qemu:img",
+    with = {
+        name     = "bootbase",
+        builder  = "cloud-init",
+        -- img_size, base_img (url + sha256), env, templates, build_args
+        -- as in the cloud-init builder docs
+    },
+}
+
+local base = step {
+    name = "boot base VM",
+    uses = "qemu:vm",
+    with = {
+        vm = "testvm", state = "started", qemu_bin = QEMU,
+        disk = { backing = base_img.out.path },
+        args = base_args,
+        ssh  = { port = 2090 },
+    },
+}
+
+local snap = step {
+    name = "snapshot booted state",
+    uses = "qemu:savevm",
+    with = { vm = base.out.handle, tag = "base_snapshot" },
+}
+
+step { -- the base VM has done its work; its snapshot is in the image
+    uses = "qemu:vm",
+    with = { vm = "testvm", state = "stopped" },
+}
+</code></pre>
+<h2 id="per-test-resume-hotplug-bind-run-drop"><a class="header" href="#per-test-resume-hotplug-bind-run-drop">Per test: resume, hotplug, bind, run, drop</a></h2>
+<pre><code class="language-lua">local function run_test(test_name, test_args)
+    local vm = step {
+        name = "resume for test " .. test_name,
+        uses = "qemu:loadvm",
+        with = {
+            vm = "testvm",           -- same run dir the snapshot was taken on
+            qemu_bin = QEMU,
+            args = base_args,
+            snapshot = snap.out.snapshot,      -- -loadvm base_snapshot
+            state = "restarted",   -- fresh qemu process, existing overlay
+            ssh = { port = 2090 },
+        },
+    }
+
+    -- hotplug: synchronous at QMP; the guest discovers asynchronously.
+    -- addr as a STRING fixes the BDF the guest will see.
+    step {
+        name = "attach nvme0",
+        uses = "qemu:qmp/send",
+        with = { vm = vm.out.handle, commands = {
+            qmp.dev_add("nvme", { id = "nvme0", bus = "root0", addr = "0.0" }),
+        } },
+    }
+
+    -- wait for guest-side appearance at the deterministic BDF
+    step {
+        uses = "shell",
+        target = vm.out.target,
+        with = { cmd = { "sh", "-c",
+            "while ! lspci -nn | grep -q '0000:03:00.0'; do sleep 0.1; done" } },
+    }
+
+    -- bind to vfio-pci (the guest's nvme driver is blacklisted in the image)
+    step {
+        uses = "shell",
+        target = vm.out.target,
+        with = { cmd = { "sh", "-c", [[
+            addr=0000:03:00.0
+            echo "$addr" &gt; /sys/bus/pci/devices/$addr/driver/unbind || true
+            echo vfio-pci &gt; /sys/bus/pci/devices/$addr/driver_override
+            echo "$addr" &gt; /sys/bus/pci/drivers/vfio-pci/bind
+        ]] } },
+    }
+
+    -- the actual test
+    step {
+        name = "run " .. test_name,
+        uses = "shell",
+        target = vm.out.target,
+        with = { cmd = test_args },
+    }
+
+    -- hot-unplug; poll QMP for the unplug event, then retire the buffer
+    step {
+        uses = "qemu:qmp/send",
+        with = { vm = vm.out.handle, commands = {
+            { execute = "device_del", arguments = { id = "nvme0" } },
+        } },
+    }
+    local p = step { uses = "qemu:qmp/poll",
+                     with = { vm = vm.out.handle, timeout_s = 10 } }
+    assert(p.out.events[1].name == "DEVICE_DELETED")
+    step { uses = "qemu:qmp/consume",
+           with = { vm = vm.out.handle, n = #p.out.events } }
+
+    step { uses = "qemu:vm", with = { vm = "testvm", state = "stopped" } }
+end
+
+run_test("nvme-4k", { "/tmp/tp4176.test" })
+</code></pre>
+<h2 id="what-each-piece-does"><a class="header" href="#what-each-piece-does">What each piece does</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>recipe step</th><th>here</th></tr>
+</thead>
+<tbody>
+<tr><td>boot once, <code>savevm base_snapshot</code></td><td><code>qemu:vm</code> (waits for ssh) → <code>qemu:savevm</code></td></tr>
+<tr><td>per test: same args + <code>-loadvm</code></td><td><code>qemu:loadvm</code> with <code>base_args</code> + <code>snapshot</code></td></tr>
+<tr><td>root ports pre-created, no NVMe at boot</td><td><code>base_args</code>; topology frozen by the snapshot</td></tr>
+<tr><td><code>device_add</code> with <code>addr = "0.0"</code> (string)</td><td><code>qemu:qmp/send</code> + <code>qmp.dev_add</code></td></tr>
+<tr><td>guest polls <code>lspci</code> for the known BDF</td><td><code>shell</code> step on <code>vm.out.target</code></td></tr>
+<tr><td>unbind / driver_override / bind vfio-pci</td><td><code>shell</code> step on the target</td></tr>
+<tr><td>run via <code>/dev/vfio/&lt;group&gt;</code></td><td>the test <code>shell</code> step</td></tr>
+<tr><td>destroy VM, repeat</td><td><code>qemu:vm state = "stopped"</code>; next test re-resumes with <code>restarted</code></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="notes"><a class="header" href="#notes">Notes</a></h2>
+<ul>
+<li><strong>Snapshot locality.</strong> <code>savevm</code> writes into the VM’s writable disk, which
+for an overlay-booted VM is either the default <code>&lt;run_dir&gt;/disk.qcow2</code>
+or whatever <code>with.disk.path</code> the save side used. In both cases the
+snapshot lives in the same disk the VM was booted from — so resumed
+instances use the <em>same disk path</em>. The recipe above runs tests
+<em>serially</em>; for <em>concurrent</em> instances, use distinct names and either
+a per-name run dir or a <code>with.disk.path</code> that puts each snapshot in a
+distinct file.</li>
+<li><strong>The guest’s nvme-driver blacklist</strong> is image content (the <code>bootbase</code>
+image’s <code>user-data</code>), not a step.</li>
+<li><strong>Resume is fast.</strong> Each test starts from the snapshot — seconds, not a
+fresh boot — and at a known, deterministic machine state.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-c2a407aa.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+
+    </div>
+    </body>
+</html>
