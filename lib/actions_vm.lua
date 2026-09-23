@@ -324,7 +324,7 @@ local function cleanup_runtime_files(h, keep_overlay)
 	-- launch resumes from (snapshots.md: the snapshot lives inside
 	-- <run_dir>/disk.qcow2)
 	local d = makac.fs.open_dir(h.run_dir)
-	for _, ent in ipairs(makac.fs.listdir(h.run_dir)) do
+	for _, ent in ipairs(assert(makac.fs.listdir(h.run_dir))) do
 		if ent.name ~= "disk.qcow2" then
 			d:remove(ent.name)
 		end

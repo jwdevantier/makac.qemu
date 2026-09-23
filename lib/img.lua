@@ -58,6 +58,8 @@
 ---@field force boolean
 ---@field exec fun(argv: string[]): RunResult
 ---@field stage fun(stage_name: string, manifest: table, run: fun(ctx: QemuBuildCtx))
+---@field _stages_used? integer
+---@field _stages_ran? integer
 
 ---@class QemuImgResult
 ---@field changed boolean
@@ -66,6 +68,8 @@
 ---@class QemuImgLib
 local M = {}
 
+---@param fmt string
+---@param ... any
 local function fail(fmt, ...)
 	error(("qemu:img: " .. fmt):format(...), 0)
 end
@@ -304,6 +308,7 @@ local function resolve_builder(with)
 		fail("image '%s': unknown builder %q (registered: %s)",
 			with.name, b, table.concat(names, ", "))
 	end
+	assert(entry)
 	return entry.build, entry.manifest
 end
 
