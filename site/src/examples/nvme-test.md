@@ -21,7 +21,7 @@ topology that has empty buses ready for hotplug. The boot disk is an
 overlay over a built image (`{{ disk }}`).
 
 ```lua
-local qmp = require("pkgs:qemu/qmp")
+local qmp = require("pkgs/qemu/qmp")
 
 local QEMU = "/path/to/qemu-system-x86_64"   -- site-local
 

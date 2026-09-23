@@ -49,12 +49,12 @@ For illustrative purposes, this assumes you add the package under the id 'qemu',
 | [`qemu:qmp/consume`](reference/qmp.md) | Discard events the workflow has finished treating. |
 
 ### Library code
-* [`require("pkgs:qemu/qmp")`](reference/library.md)
+* [`require("pkgs/qemu/qmp")`](reference/library.md)
     * Helpers to construct QMP commands
-* `require("pkgs:qemu/img")`
+* `require("pkgs/qemu/img")`
     * Custom image builders for raw- and cloud-init images.
     * You can create your own builders to use with the `qemu:img` action
-* `require("pkgs:qemu/serial")`
+* `require("pkgs/qemu/serial")`
     * Code to wait on particular strings appearing on the QEMU VM's serial console
 
 ## The big ideas

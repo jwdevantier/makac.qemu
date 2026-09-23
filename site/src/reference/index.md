@@ -16,5 +16,5 @@ every input (`with`) and output (`out`) is spelled out.
 - [`qemu:savevm`](savevm.md) — capture a snapshot.
 - [`qemu:qmp/send`, `poll`, `consume`](qmp.md) — the QMP actions.
 - [`qemu:img`](img.md) — image builders.
-- [Library modules](library.md) — `pkgs:qemu/qmp`, `pkgs:qemu/img`,
-  `pkgs:qemu/serial`.
+- [Library modules](library.md) — `pkgs/qemu/qmp`, `pkgs/qemu/img`,
+  `pkgs/qemu/serial`.

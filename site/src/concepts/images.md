@@ -144,7 +144,7 @@ The customize VM obeys `timeout_s` (default 600).
 ## Custom builders
 
 ```lua
-local img = require("pkgs:qemu/img")
+local img = require("pkgs/qemu/img")
 
 img.register_builder("my-builder",
     -- build: produce the image file; returns its path

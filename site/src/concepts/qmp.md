@@ -104,14 +104,14 @@ step { uses = "qemu:qmp/consume",
 
 ## The library
 
-`require("pkgs:qemu/qmp")` constructs command tables. **It performs no I/O**
+`require("pkgs/qemu/qmp")` constructs command tables. **It performs no I/O**
 — there is no socket, no target VM, no sending. Constructors map arguments
 to a `{ execute = ..., arguments = ... }` table, which a workflow passes to
 `qemu:qmp/send` — the only place commands are sent, and the only place a VM
 is named:
 
 ```lua
-local qmp = require("pkgs:qemu/qmp")
+local qmp = require("pkgs/qemu/qmp")
 
 step {
     uses = "qemu:qmp/send",

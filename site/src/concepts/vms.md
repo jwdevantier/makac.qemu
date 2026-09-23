@@ -189,10 +189,10 @@ process up, QMP unresponsive.
 ## The serial console
 
 `-serial file:<run_dir>/serial` captures the guest console for the VM's
-lifetime. Workflows consume it through `require("pkgs:qemu/serial")`:
+lifetime. Workflows consume it through `require("pkgs/qemu/serial")`:
 
 ```lua
-local serial = require("pkgs:qemu/serial")
+local serial = require("pkgs/qemu/serial")
 
 serial.wait_for(vm.out.handle, "login:", 30)   -- wait for a Lua pattern
 serial.tail(vm.out.handle, 20)                 -- last 20 lines

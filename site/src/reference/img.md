@@ -90,7 +90,7 @@ with = {
 Or register one for reuse:
 
 ```lua
-local img = require("pkgs:qemu/img")
+local img = require("pkgs/qemu/img")
 img.register_builder("my-builder", build_fn, manifest_fn)
 ```
 
