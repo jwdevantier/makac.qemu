@@ -52,7 +52,9 @@ with = {
 
     base_img = {                       -- required
         url    = "https://example.com/fedora-cloud-base.qcow2",
-        sha256 = "<64 hex chars>",     -- required
+        sha256 = "<64 hex chars>",     -- required; pins the DOWNLOADED bytes
+        compression = "xz",            -- optional; "xz"|"bz2"|"gz"|"none",
+                                       --   default: sniffed from the URL suffix
     },
 
     env = { hostname = "testbox" },    -- optional
@@ -64,12 +66,20 @@ with = {
 
     build_args = { ... },              -- required: throwaway VM command line
     timeout_s = 600,                   -- optional; customize-VM timeout
+
+    sources = {                        -- optional: extra files grafted into the ISO
+        { url = "https://...", sha256 = "<64 hex>", filename = "vendor-data" },
+    },
+    verbose = true,                    -- optional: stream the customize VM's console
 }
 ```
 
-Stages: download → prepare (resize, overlay) → templates → iso
-(`genisoimage`) → customize (throwaway VM powers itself off). See
-[Concepts: Images](../concepts/images.md) for the template rule and the
+Stages: download → extract (decompress when `compression` is set) → prepare
+(probe format, resize, overlay) → templates → iso (`genisoimage`) →
+customize (throwaway VM powers itself off). Stages are chain-linked: a
+re-run of any stage re-runs everything after it. See
+[Concepts: Images](../concepts/images.md) for the base-image
+checksum/compression/format rules, the template rule, and the
 `{{ img_self }}` / `{{ cloud_init_iso }}` substitutions.
 
 ## Custom builders
@@ -92,6 +102,16 @@ Or register one for reuse:
 ```lua
 local img = require("pkgs/qemu/img")
 img.register_builder("my-builder", build_fn, manifest_fn)
+```
+
+For a `manifest_fn` that depends on files or structured inputs, the module
+exports the same helpers the built-ins use:
+
+```lua
+img.hash_file(path)          -- sha256 of a file; an unreadable file hashes to
+                             -- a distinct error string, so "input gone" = changed
+img.hash_spec(value, why)    -- canonical text for a structured spec value
+img.stage(ctx, name, manifest, run)  -- the per-stage cache; true if it ran
 ```
 
 A one-off function without a manifest runs every time.

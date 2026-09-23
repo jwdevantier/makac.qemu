@@ -40,11 +40,15 @@ conditionals — and the same command table can be sent to any number of VMs.
 local img = require("pkgs/qemu/img")
 
 img.register_builder(name, build_fn, manifest_fn)
+img.hash_file(path)                  -- sha256 of a file input (missing = distinct)
+img.hash_spec(value, why)            -- canonical text for a structured input
+img.stage(ctx, name, manifest, run)  -- the per-stage cache; true if it ran
 ```
 
 Registers a custom builder for use by `with.builder = "<name>"` in
 [`qemu:img`](img.md). `build_fn(with, ctx)` produces the image and returns
-its path; `manifest_fn(with, ctx)` (optional) returns the cache key.
+its path; `manifest_fn(with, ctx)` (optional) returns the cache key — use the
+`hash_*` helpers to turn files and spec tables into stable values.
 See [Concepts: Images](../concepts/images.md).
 
 ## `require("pkgs/qemu/serial")` — the serial console

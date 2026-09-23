@@ -31,8 +31,14 @@ a **manifest** — a hash over every input the stage consumes — and compares
 it against the manifest stored from the previous run. Match: the stage is
 skipped. Mismatch or missing: it runs and saves the new manifest.
 
-Concretely: editing a cloud-init template re-runs "render" and everything
-after it, but does not re-download the base image or re-run the resize.
+Stages are **chained**: every stage's manifest carries an `upstream` field —
+a digest of the previous stage's manifest — so a re-run of any stage shifts
+every later stage's manifest and forces it to re-run too. Editing a
+cloud-init template re-runs "templates" and everything after it, but does
+not re-download the base image or re-extract it. (Contents-only manifests
+had a hole: a re-run of prepare recreates the working overlay pristine, so
+a skipped customize stage would have left the artifact without its
+customization — chaining makes the cascade explicit instead.)
 
 Image state lives under `.makac/qemu/img/<name>/`. Two workflows naming the
 same image build the *same* artifact as long as their inputs hash the same
@@ -77,16 +83,17 @@ One stage: `qemu-img create` under a manifest of name/size/format.
 
 ## Builder `cloud-init`
 
-A customized OS image from a stock cloud image, in five content-cached
+A customized OS image from a stock cloud image, in six content-cached
 stages:
 
 | stage | does |
 | --- | --- |
 | 1. download | fetch the base image (url + sha256) into the makac download cache |
-| 2. prepare | copy base to the state dir, resize to `img_size`, create the working overlay |
-| 3. templates | render each `templates` entry with the env |
-| 4. iso | `genisoimage -volid cidata` from the rendered templates + sources |
-| 5. customize | boot a throwaway VM (image as disk, ISO as cdrom); wait for it to power itself off |
+| 2. extract | decompress the download when `compression` is set (else a no-op: the pristine base is the cache entry itself) |
+| 3. prepare | probe the base's format, copy it, resize the copy to `img_size`, create the working overlay |
+| 4. templates | render each `templates` entry with the env |
+| 5. iso | `genisoimage -volid cidata` from the rendered templates + sources |
+| 6. customize | boot a throwaway VM (image as disk, ISO as cdrom); wait for it to power itself off |
 
 Required keys: `img_size`; `qemu_bin` and `build_args` (the throwaway VM's
 command line, flattened exactly like `qemu:vm`'s `args`);
@@ -103,6 +110,7 @@ meta-data:
     base_img = {
         url    = "https://example.com/fedora-cloud-base.qcow2",
         sha256 = "<64 hex chars>",
+        -- compression = "xz",      -- optional; see below
     },
 
     env = { hostname = "testbox" },
@@ -112,6 +120,12 @@ meta-data:
         { template = "templates/meta-data.tpl",   output = "meta-data" },
     },
 
+    sources = {                        -- optional: extra files grafted into the ISO
+        { url = "https://example.com/vendor-data", sha256 = "<64 hex chars>",
+          filename = "vendor-data" },
+    },
+    verbose = true,                    -- optional: stream the customize VM's console
+
     build_args = {
         "-m", "2048", "-smp", "2", "-cpu", "host", "-enable-kvm",
         { "-drive",  "file={{ img_self }},if=virtio" },
@@ -120,6 +134,33 @@ meta-data:
     },
 }
 ```
+
+Optional: `sources` (extra `{ url =, sha256 =, filename = }` files grafted
+into the ISO) and `verbose` (stream the customize VM's serial console).
+
+
+### FreeBSD BASE-CI note
+FreeBSD uses a cloud-init alternative, [nuageinit](https://man.freebsd.org/cgi/man.cgi?query=nuageinit&sektion=7&format=html). Unlike cloud-init, nuageinit
+will run on every boot unless disabled. Therefore, structure your initialization
+such that it ends with *disabling* the nuageinit service
+(`sysrc nuageinit_enable=NO`).
+
+### The base image: checksum, compression, format
+
+`base_img.sha256` must match the hash of the downloaded file - even if it
+is compressed and therefore extracted after the download.
+Decompression is deterministic, so verifying the compressed file verifies
+the uncompressed result.
+
+The download may be compressed: `.xz`, `.bz2` and `.gz` suffixes are
+decompressed in stage 2 (via `xz -dc`, `bzip2 -dc`, `gzip -dc` — the tool
+is needed on `PATH` only when the URL uses it). Set
+`base_img.compression = "xz" | "bz2" | "gz" | "none"` explicitly when the
+URL has no telling suffix.
+
+To create an overlay, one must also specify the format of the backing-file.
+The action will automatically use `qemu-img info --output=json` to determine
+the actual format of the backing image.
 
 ### Templates
 
@@ -138,8 +179,9 @@ users:
 
 The customize VM must power itself off — the user-data ends with `poweroff:`
 (or issues the shutdown). Inside `build_args`, two substitutions:
-`{{ img_self }}` (the working image) and `{{ cloud_init_iso }}` (the ISO).
-The customize VM obeys `timeout_s` (default 600).
+`{{ img_self }}` (the working image) and `{{ cloud_init_iso }}` (the ISO of
+stage 5). The customize VM obeys `timeout_s` (default 600).
+
 
 ## Custom builders
 
