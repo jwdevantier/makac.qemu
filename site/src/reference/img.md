@@ -64,6 +64,11 @@ with = {
 
     build_args = { ... },              -- required: throwaway VM command line
     timeout_s = 600,                   -- optional; customize-VM timeout
+
+    sources = {                        -- optional: extra files grafted into the ISO
+        { url = "https://...", sha256 = "<64 hex>", filename = "vendor-data" },
+    },
+    verbose = true,                    -- optional: stream the customize VM's console
 }
 ```
 
@@ -92,6 +97,16 @@ Or register one for reuse:
 ```lua
 local img = require("pkgs/qemu/img")
 img.register_builder("my-builder", build_fn, manifest_fn)
+```
+
+For a `manifest_fn` that depends on files or structured inputs, the module
+exports the same helpers the built-ins use:
+
+```lua
+img.hash_file(path)          -- sha256 of a file; an unreadable file hashes to
+                             -- a distinct error string, so "input gone" = changed
+img.hash_spec(value, why)    -- canonical text for a structured spec value
+img.stage(ctx, name, manifest, run)  -- the per-stage cache; true if it ran
 ```
 
 A one-off function without a manifest runs every time.

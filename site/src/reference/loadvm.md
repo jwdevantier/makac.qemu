@@ -22,6 +22,7 @@ with = {
 
     ssh  = { port = 2222 },          -- optional, as in qemu:vm
     disk = { backing = img.out.path },   -- optional
+    wait_ssh = { timeout_s = 120 },  -- optional, as in qemu:vm
     run_dir = "...",                 -- optional override
 }
 ```
@@ -30,7 +31,8 @@ No `"stopped"` state here — stopping is `qemu:vm`'s.
 
 ## `out`
 
-Same as [`qemu:vm`](vm.md): `handle`, `target?`, `pid`, status fields.
+Same as [`qemu:vm`](vm.md): `handle`, `target?`, `pid`, `disk?`, status
+fields.
 
 ## Rules
 
@@ -79,7 +81,7 @@ local resumed = step {
     name = "resume from snapshot",
     uses = "qemu:loadvm",
     with = {
-        name     = "testvm",
+        vm       = "testvm",
         qemu_bin = qemu_bin,
         args     = vm_args,          -- same machine as the save side
         snapshot = snap.out.snapshot,  -- -loadvm base_snapshot

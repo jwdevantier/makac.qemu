@@ -34,6 +34,10 @@ with = {
                                         -- `path = "..."` puts the overlay elsewhere)
     wait_ssh = { timeout_s = 120, interval_s = 2 },  -- default: wait
     -- wait_ssh = false,              -- return as soon as QEMU is launched
+
+    guest_shutdown = false,          -- optional; on "stopped", skip the guest
+                                     -- powerdown handshake (default true)
+    force = true,                    -- optional; teardown escalation (default true)
     run_dir = "...",                 -- override the runtime directory
 }
 ```
@@ -48,6 +52,7 @@ out = {
     handle = <handle table>,   -- pass to later VM actions
     target = <remote target> or nil,   -- iff ssh configured
     pid    = 1234,
+    disk   = { backing = "...", path = "..." } or nil,  -- resolved overlay, if used
     -- status probe fields (see Concepts: VMs):
     alive         = true,
     running       = true,
@@ -65,7 +70,7 @@ on a not-running VM).
 | state | semantics |
 | --- | --- |
 | `started` | launch; no-op if running the same invocation. Errors if running a *different* invocation — that's `restarted`. |
-| `stopped` | graceful: QMP `system_powerdown`, poll `query-status` up to `timeout_s` (default 20). Then, when `force` (default `true`): QMP `quit`, then `kill -9` the pidfile pid. On success, remove runtime files, close the handle's QMP connection. |
+| `stopped` | graceful: QMP `system_powerdown`, poll `query-status` up to `timeout_s` (default 20). With `with.guest_shutdown = false`, skip that handshake and stop by QMP `quit`. Then, when `force` (default `true`): QMP `quit`, then `kill -9` the pidfile pid. On success, remove runtime files, close the handle's QMP connection. |
 | `restarted` | stop then start, unconditionally. Recreates the overlay disk (except when resuming from a snapshot — see `qemu:loadvm`). |
 
 `with.force` (default `true`) controls the escalation in `stopped`.

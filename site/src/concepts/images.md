@@ -112,6 +112,12 @@ meta-data:
         { template = "templates/meta-data.tpl",   output = "meta-data" },
     },
 
+    sources = {                        -- optional: extra files grafted into the ISO
+        { url = "https://example.com/vendor-data", sha256 = "<64 hex chars>",
+          filename = "vendor-data" },
+    },
+    verbose = true,                    -- optional: stream the customize VM's console
+
     build_args = {
         "-m", "2048", "-smp", "2", "-cpu", "host", "-enable-kvm",
         { "-drive",  "file={{ img_self }},if=virtio" },
@@ -120,6 +126,9 @@ meta-data:
     },
 }
 ```
+
+Optional: `sources` (extra `{ url =, sha256 =, filename = }` files grafted
+into the ISO) and `verbose` (stream the customize VM's serial console).
 
 ### Templates
 

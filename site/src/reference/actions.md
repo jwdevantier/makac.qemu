@@ -26,16 +26,16 @@ Every action returns the normalized makac result shape:
 | `with.run_dir` | optional override of the VM's runtime directory (default `.makac/qemu/<name>`). |
 
 `qemu:vm` and `qemu:loadvm` accept the same `with.vm` key (the historical
-`with.name`/`with.handle` pair was replaced by it; passing either fails
-with a message naming the replacement).
+`with.name`/`with.handle` pair was replaced by it — pass `with.vm`; giving
+it neither is a failure).
 
 ## Action table
 
 | action | `with` | `out` |
 | --- | --- | --- |
-| [`qemu:vm`](vm.md) | `vm`, `state?`, `qemu_bin`, `args`, `ssh?`, `disk?`, `wait_ssh?` | `handle`, `target?`, `pid`, status fields |
+| [`qemu:vm`](vm.md) | `vm`, `state?`, `qemu_bin`, `args`, `ssh?`, `disk?`, `wait_ssh?`, `guest_shutdown?`, `force?` | `handle`, `target?`, `pid`, `disk?`, status fields |
 | [`qemu:probe`](probe.md) | `vm` | `handle`, `pid`, status fields |
-| [`qemu:loadvm`](loadvm.md) | `vm`, `state?`, `snapshot`, `qemu_bin`, `args`, `ssh?`, `disk?` | `handle`, `target?`, `pid`, status fields |
+| [`qemu:loadvm`](loadvm.md) | `vm`, `state?`, `snapshot`, `qemu_bin`, `args`, `ssh?`, `disk?`, `wait_ssh?` | `handle`, `target?`, `pid`, `disk?`, status fields |
 | [`qemu:savevm`](savevm.md) | `vm`, `tag?`, `timeout_s?` | `snapshot` (the tag) |
 | [`qemu:qmp/send`](qmp.md) | `vm`, `commands`, `on_error?` | `results` (one per command) |
 | [`qemu:qmp/poll`](qmp.md) | `vm`, `timeout_s?` | `events` |
