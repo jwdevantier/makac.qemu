@@ -8,6 +8,15 @@
 -- pure, the constructors compose with ordinary Lua and one command table
 -- can be sent to any number of VMs.
 
+---@class QemuQmpCommand
+---@field execute string
+---@field arguments? table<string, any>
+
+---@class QemuQmpResult
+---@field return? any
+---@field error? { class: string, desc: string }
+
+---@class QemuQmpLib
 local M = {}
 
 -- merge(tables): later tables win; returns a FRESH table (sources are
@@ -16,6 +25,8 @@ local M = {}
 -- syntax but otherwise just work). Exposed because compositions like the
 -- NVMe hotplug sequence reuse it for option tables. Entries are an ARRAY
 -- of tables (no interior nils).
+---@param tables table[]
+---@return table
 function M.merge(tables)
 	local t = {}
 	for _, tsrc in ipairs(tables) do
@@ -29,6 +40,9 @@ end
 -- dev_add(driver, args?) -> { execute = "device_add",
 --                              arguments = merge{args, {driver = driver}} }
 -- The explicit driver argument wins over a stray args.driver.
+---@param driver string
+---@param args? table<string, any>
+---@return QemuQmpCommand
 function M.dev_add(driver, args)
 	return {
 		execute = "device_add",
@@ -38,6 +52,10 @@ end
 
 -- bdev_add(node, driver, args?) -> blockdev-add with node-name/driver
 -- injected.
+---@param node string
+---@param driver string
+---@param args? table<string, any>
+---@return QemuQmpCommand
 function M.bdev_add(node, driver, args)
 	return {
 		execute = "blockdev-add",
@@ -48,6 +66,8 @@ end
 -- hmp(command_line) -> human-monitor-command table. The command line is an
 -- opaque string ("savevm mysnapshot"); no quoting/escaping is involved in
 -- either direction.
+---@param command_line string
+---@return QemuQmpCommand
 function M.hmp(command_line)
 	return {
 		execute = "human-monitor-command",
@@ -57,6 +77,7 @@ end
 
 -- query_status() -> { execute = "query-status" } (probe and start
 -- choreography both ask this).
+---@return QemuQmpCommand
 function M.query_status()
 	return { execute = "query-status" }
 end
@@ -64,11 +85,15 @@ end
 -- --- reply helpers (also pure) ------------------------------------------
 
 -- ok(result): nil error means the command succeeded.
+---@param result QemuQmpResult
+---@return boolean
 function M.ok(result)
 	return result.error == nil
 end
 
 -- err_desc(result): the error desc, or nil when there is no error.
+---@param result QemuQmpResult
+---@return string?
 function M.err_desc(result)
 	return result.error ~= nil and result.error.desc or nil
 end

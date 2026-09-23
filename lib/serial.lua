@@ -16,6 +16,7 @@
 
 local handlelib = require("pkgs/qemu/handle")
 
+---@class QemuSerialLib
 local M = {}
 
 -- read the log; nil-safe — a not-yet-created log reads as "" (the console
@@ -40,6 +41,9 @@ end
 -- tail(handle_or_name, n) -> string: the last n lines of the serial log.
 -- A missing/empty log returns "" (nothing to say); a log shorter than n
 -- lines comes back whole.
+---@param handle_or_name QemuVmRef
+---@param n integer
+---@return string
 function M.tail(handle_or_name, n)
 	if type(n) ~= "number" or n < 1 or n % 1 ~= 0 then
 		error(("qemu/serial.tail: n must be a positive integer, got %s"):format(tostring(n)), 2)
@@ -76,6 +80,10 @@ end
 -- result (the whole match, or the first capture — workflows can pull a
 -- value out of the line they waited on). Timeout is a failure quoting the
 -- log's tail.
+---@param handle_or_name QemuVmRef
+---@param pattern string
+---@param timeout_s number
+---@return string
 function M.wait_for(handle_or_name, pattern, timeout_s)
 	if type(pattern) ~= "string" or pattern == "" then
 		error(("qemu/serial.wait_for: the pattern must be a non-empty Lua pattern, got %s")

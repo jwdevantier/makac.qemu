@@ -23,6 +23,28 @@
 -- syntactically different spellings of one directory resolve to the same
 -- entry and the same table.
 
+---@class QemuHandle
+---@field name string
+---@field run_dir string
+---@field pid_file string
+---@field qmp_socket string
+---@field disk_overlay string
+---@field monitor_socket string
+---@field serial_log string
+---@field qemu_stdout string
+---@field qemu_stderr string
+---@field ssh_config string
+
+---@class QemuVmStatus
+---@field pid integer?
+---@field alive boolean
+---@field running boolean?
+---@field qmp_connected boolean
+---@field runstate string?
+
+---@alias QemuVmRef string|QemuHandle
+
+---@class QemuHandleLib
 local M = {}
 
 -- per-run registry: canonical run_dir -> handle table (handle.md, "One
@@ -38,6 +60,8 @@ local targets = {}
 
 -- default_run_dir(name): derivation rule (handle.md, "Obtaining one,
 -- re-deriving one").
+---@param name string
+---@return string
 function M.default_run_dir(name)
 	assert(makac.data_dir ~= nil, "qemu: makac.data_dir is not set")
 	return makac.data_dir .. "/qemu/" .. name
@@ -46,6 +70,8 @@ end
 -- canonical_run_dir(dir): absolute, cleaned string form of a run_dir —
 -- the registry key. Relative input anchors at makac's cwd; cleaning is
 -- lexical (symlinks not resolved).
+---@param dir string|Path
+---@return string
 function M.canonical_run_dir(dir)
 	if type(dir) ~= "string" then
 		dir = tostring(dir) -- path userdata: the escape hatch
@@ -78,6 +104,9 @@ end
 -- of a VM materializes the registry entry; every later resolve of the same
 -- VM — by name, by handle, even by an equivalent table from another run —
 -- returns the IDENTICAL table.
+---@param handle_or_name QemuVmRef
+---@param run_dir? string
+---@return QemuHandle
 function M.resolve(handle_or_name, run_dir)
 	local name, dir
 	if type(handle_or_name) == "table" then
@@ -108,6 +137,9 @@ end
 
 -- attach_target(handle_or_name, target): the registry remembers the VM's
 -- ssh target (one per handle). Returns the target for convenience.
+---@param handle_or_name QemuVmRef
+---@param target Target
+---@return Target
 function M.attach_target(handle_or_name, target)
 	local handle = M.resolve(handle_or_name)
 	if targets[handle.run_dir] ~= nil then
@@ -123,6 +155,8 @@ end
 
 -- target_of(handle_or_name) -> target|nil: the VM's ssh target, if ssh is
 -- configured and one was set up this run.
+---@param handle_or_name QemuVmRef
+---@return Target?
 function M.target_of(handle_or_name)
 	return targets[M.resolve(handle_or_name).run_dir]
 end
@@ -130,6 +164,8 @@ end
 -- detach_target(handle_or_name) -> target|nil: drop the target from the
 -- registry WITHOUT closing it (the caller closes — teardown order). A
 -- handle without a target is a no-op.
+---@param handle_or_name QemuVmRef
+---@return Target?
 function M.detach_target(handle_or_name)
 	local handle = M.resolve(handle_or_name)
 	local t = targets[handle.run_dir]
@@ -139,6 +175,9 @@ end
 -- attach_qmp(handle_or_name, client): the registry takes ownership of the
 -- handle's QMP connection. Exactly one connection per handle (handle.md,
 -- "The QMP connection"): attaching while one is live is a spec error.
+---@param handle_or_name QemuVmRef
+---@param client any
+---@return any
 function M.attach_qmp(handle_or_name, client)
 	local handle = M.resolve(handle_or_name)
 	if clients[handle.run_dir] ~= nil then
@@ -154,12 +193,15 @@ end
 
 -- qmp_of(handle_or_name) -> client|nil: resolve "this handle's connection"
 -- through the registry at call time (handle.md).
+---@param handle_or_name QemuVmRef
+---@return any
 function M.qmp_of(handle_or_name)
 	return clients[M.resolve(handle_or_name).run_dir]
 end
 
 -- close(handle_or_name): drop and close the handle's QMP connection.
 -- Idempotent; a handle without a connection is a no-op.
+---@param handle_or_name QemuVmRef
 function M.close(handle_or_name)
 	local handle = M.resolve(handle_or_name)
 	local client = clients[handle.run_dir]
@@ -200,6 +242,8 @@ end
 
 -- process_alive(pid): the liveness predicate for pidfile pids: answers
 -- kill(pid, 0) MINUS zombies (see is_zombie). nil pid means not alive.
+---@param pid integer?
+---@return boolean
 function M.process_alive(pid)
 	return pid ~= nil and makac.pid_alive(pid) and not is_zombie(pid)
 end
@@ -214,6 +258,8 @@ end
 --      alive=true, running=nil, qmp_connected=false).
 --   3. Down: no pidfile or dead pid.
 -- NEVER raises on a down/wedged VM — it reports.
+---@param handle_or_name QemuVmRef
+---@return QemuVmStatus
 function M.probe(handle_or_name)
 	local handle = M.resolve(handle_or_name)
 	local qmp_connected = false

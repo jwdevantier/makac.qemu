@@ -21,6 +21,7 @@
 -- is the bare flag, strings/numbers pass as-is; anything else is a spec
 -- error. Lua `pairs` order never leaks out.
 
+---@class QemuArgsLib
 local M = {}
 
 -- Words the package injects itself (pidfile/sockets/serial): authoring
@@ -38,6 +39,9 @@ end
 
 -- serialize(tbl, path): associative table -> one canonical property word.
 -- Exported so tests (and other package modules) can use it directly.
+---@param tbl table<string, string|number|boolean>
+---@param path? string
+---@return string
 function M.serialize(tbl, path)
 	path = path or "props"
 	local keys = {}
@@ -117,6 +121,8 @@ end
 
 -- flatten(args) -> { word, ... }: the flat argv. A nil/false root flattens
 -- to nothing; a function root is called.
+---@param args any
+---@return string[]
 function M.flatten(args)
 	local out = {}
 	push(args, "args", out)
@@ -128,6 +134,9 @@ end
 -- one word per line. Newline separation is a faithful argv rendering (a
 -- word containing a newline is rejected as unrepresentable) and makes
 -- "different invocation" failures diffable (vm.md, "Invocation identity").
+---@param qemu_bin string
+---@param args any
+---@return string
 function M.canonical_invocation(qemu_bin, args)
 	if type(qemu_bin) ~= "string" or qemu_bin == "" then
 		fail("canonical_invocation: qemu_bin must be a non-empty string (got %s)",
@@ -149,6 +158,7 @@ end
 -- check_reserved(args): supplying a word the package auto-injects
 -- (vm.md, "Auto-injected runtime arguments") is a spec error naming the
 -- conflicting word. Accepts raw args or an already-flattened word list.
+---@param args any
 function M.check_reserved(args)
 	for _, w in ipairs(M.flatten(args)) do
 		if RESERVED[w] then
@@ -162,6 +172,9 @@ end
 -- in the flattened words. `{{ disk }}` is the ONLY substitution available
 -- in VM args (vm.md, "Overlay boot disks"); using it with no disk given is
 -- a spec error. Accepts raw args or an already-flattened word list.
+---@param args any
+---@param vars? { disk?: string }
+---@return string[]
 function M.substitute(args, vars)
 	local disk = vars and vars.disk
 	local out = {}

@@ -29,6 +29,41 @@
 --                                   img.stage — e.g. cloud-init)
 --   default state_dir: makac.data_dir .. "/qemu/img/" .. with.name
 
+---@class QemuImgSpec
+---@field name string
+---@field builder string|QemuBuildFn
+---@field state_dir? string
+---@field force? boolean
+---@field env? table<string, string|number|boolean>
+---@field env_hook? fun(env: table<string, any>): table<string, any>
+---@field builder_manifest? QemuManifestFn
+---@field img_size? string
+---@field format? string
+---@field qemu_bin? string
+---@field base_img? { url: string, sha256: string }
+---@field build_args? any
+---@field templates? { template: string, output: string }[]
+---@field sources? { url: string, sha256: string, filename: string }[]
+---@field timeout_s? number
+---@field verbose? boolean
+---@field [string] any
+
+---@alias QemuBuildFn fun(with: QemuImgSpec, ctx: QemuBuildCtx): { path: string, changed?: boolean }
+---@alias QemuManifestFn fun(with: QemuImgSpec, ctx: QemuBuildCtx): table
+
+---@class QemuBuildCtx
+---@field name string
+---@field state_dir string
+---@field env table<string, any>
+---@field force boolean
+---@field exec fun(argv: string[]): RunResult
+---@field stage fun(stage_name: string, manifest: table, run: fun(ctx: QemuBuildCtx))
+
+---@class QemuImgResult
+---@field changed boolean
+---@field out { path: string }
+
+---@class QemuImgLib
 local M = {}
 
 local function fail(fmt, ...)
@@ -45,6 +80,9 @@ local builders = {} -- name -> { build = fn, manifest = fn? }
 -- table whose change invalidates the build. ctx carries state_dir, the
 -- assembled env and an exec helper (raising on failure). Not exported
 -- through the package system — workflow code require()s pkgs/qemu/img.
+---@param name string
+---@param build_fn QemuBuildFn
+---@param manifest_fn? QemuManifestFn
 function M.register_builder(name, build_fn, manifest_fn)
 	assert(type(name) == "string" and name ~= "",
 		"qemu:img register_builder: the builder name must be a non-empty string")
@@ -145,6 +183,9 @@ end
 -- hash_spec(value): hash a spec input (a table of arbitrary shape, an
 -- env, ...). Returns the canonical text; builders put the string into
 -- their manifest tables.
+---@param value any
+---@param why? string
+---@return string
 function M.hash_spec(value, why)
 	return canonical_value(value, why or "img.hash_spec")
 end
@@ -153,6 +194,8 @@ end
 -- be read hashes as its error string — distinct from every real hash —
 -- so "input file gone" counts as changed and rebuilds rather than
 -- silently matching.
+---@param path string|Path
+---@return string
 function M.hash_file(path)
 	local hex, err = makac.fs.sha256(path)
 	if hex == nil then
@@ -165,6 +208,11 @@ end
 -- the stage ran. The stored manifest updates only after a successful run.
 -- Stage accounting lives on ctx so M.build can report changed = "any
 -- stage ran" for builders that don't self-report.
+---@param ctx QemuBuildCtx
+---@param stage_name string
+---@param manifest table
+---@param run fun(ctx: QemuBuildCtx)
+---@return boolean
 function M.stage(ctx, stage_name, manifest, run)
 	assert(type(stage_name) == "string" and stage_name ~= "" and not stage_name:find("/", 1, true),
 		"qemu:img stage: the stage name must be a simple non-empty word")
@@ -273,6 +321,8 @@ end
 -- (images.md). Every builder returns out = { path = <abs path to the
 -- image> } and changed = true iff any stage ran.
 local defaulted_changed -- defined below
+---@param with QemuImgSpec
+---@return QemuImgResult
 function M.build(with)
 	assert(type(with) == "table", "qemu:img: the step's 'with' table is required")
 	if type(with.name) ~= "string" or with.name == "" then
@@ -338,6 +388,10 @@ defaulted_changed = defaulted_changed_fn
 
 -- run_build: call the builder and validate its artifact. Returns the
 -- absolute image path and the builder's changed flag (nil = not reported).
+---@param with QemuImgSpec
+---@param build_fn QemuBuildFn
+---@param ctx QemuBuildCtx
+---@return string, boolean?
 function M.run_build(with, build_fn, ctx)
 	local result = build_fn(with, ctx)
 	assert(type(result) == "table",
