@@ -14,7 +14,7 @@
 -- Both resolve their first argument exactly like the actions do (a name
 -- re-derives the handle), so a VM started by an earlier run can be tailed.
 
-local handlelib = require("pkgs/qemu/handle")
+local handlelib = require("./handle")
 
 ---@class QemuSerialLib
 local M = {}

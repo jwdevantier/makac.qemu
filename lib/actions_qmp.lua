@@ -13,7 +13,7 @@
 -- through the per-run registry at call time (handle.md, "One handle per VM
 -- per run"). Step failures raise with a message naming the VM.
 
-local handlelib = require("pkgs/qemu/handle")
+local handlelib = require("./handle")
 
 local M = {}
 

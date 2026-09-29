@@ -4,8 +4,8 @@
 -- block devices; the guest is quiesced for the capture and keeps running
 -- after. The snapshot survives the VM dying and travels with the image.
 
-local handlelib = require("pkgs/qemu/handle")
-local actions_qmp = require("pkgs/qemu/actions_qmp")
+local handlelib = require("./handle")
+local actions_qmp = require("./actions_qmp")
 
 local M = {}
 

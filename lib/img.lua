@@ -460,7 +460,7 @@ M.register_builder("raw",
 --   <state_dir>/serial.log        the customize VM's serial console
 --   <state_dir>/qemu-stderr.log   the customize VM's stderr
 
-local arglib = require("pkgs/qemu/args")
+local arglib = require("./args")
 
 -- render_template(env, text): the one rule (images.md, "Templates"):
 -- `{{ name }}` expands to env[name]; a name absent from the env is a spec

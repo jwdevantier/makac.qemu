@@ -18,8 +18,8 @@
 --     (atomically), the way QEMU's own -pidfile would. probe() never
 --     consults the process object — it does not survive the run.
 
-local handlelib = require("pkgs/qemu/handle")
-local argslib = require("pkgs/qemu/args")
+local handlelib = require("./handle")
+local argslib = require("./args")
 
 local M = {}
 
