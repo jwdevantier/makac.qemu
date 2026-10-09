@@ -40,7 +40,7 @@
 ---@field img_size? string
 ---@field format? string
 ---@field qemu_bin? string
----@field base_img? { url: string, sha256: string }
+---@field base_img? { url: string, sha256: string, compression?: string }
 ---@field build_args? any
 ---@field templates? { template: string, output: string }[]
 ---@field sources? { url: string, sha256: string, filename: string }[]
@@ -447,13 +447,23 @@ M.register_builder("raw",
 
 --- Built-in builder: cloud-init --------------------------------------------
 --
--- A customized OS image from a stock cloud image, in five stages
+-- A customized OS image from a stock cloud image, in six stages
 -- (images.md, "Builder `cloud-init`"). Per-stage manifests via img.stage;
 -- no builder-level manifest (the builder reports changed through
 -- result.changed).
 --
+-- Stage chaining (images.md, "Caching"): every stage's manifest carries an
+-- `upstream` field — a digest of the previous stage's manifest — so a
+-- re-run of ANY stage shifts every later stage's manifest and forces it to
+-- re-run. Contents-only manifests had a hole: a re-run of prepare
+-- recreates the working overlay pristine, yet a skipped customize stage
+-- would leave the artifact without its customization.
+--
 -- State layout:
---   <state_dir>/base.img          resized pristine copy of the base
+--   <state_dir>/base.extracted    decompressed base (only when the base is
+--                                 a compressed download; the "pristine base"
+--                                 is otherwise the download-cache entry)
+--   <state_dir>/base.img          resized scratch copy of the pristine base
 --   <state_dir>/image             the working overlay (the artifact)
 --   <state_dir>/<output>          rendered templates (user-data, ...)
 --   <state_dir>/cloud-init.iso    the cidata ISO
@@ -513,6 +523,19 @@ local function cloud_init_build(with, ctx)
 			and type(base_img.url) == "string" and base_img.url ~= ""
 			and type(base_img.sha256) == "string" and base_img.sha256 ~= "",
 			("qemu:img: image '%s': with.base_img must be { url =, sha256 = }"):format(name))
+	-- base_img.compression: how the download is decompressed before use —
+	-- "xz", "bz2", "gz" or "none"; default: sniffed from the URL suffix.
+	-- The sha256 always pins the DOWNLOADED bytes (images.md).
+	local compression = base_img.compression
+	if compression ~= nil then
+		assert(compression == "xz" or compression == "bz2" or compression == "gz"
+			or compression == "none",
+			("qemu:img: image '%s': with.base_img.compression must be \"xz\", \"bz2\", \"gz\" or \"none\", got %s")
+				:format(name, tostring(compression)))
+	else
+		local suffix = base_img.url:gsub("[?#].*$", ""):match("%.([%w]+)$") or ""
+		compression = ({ xz = "xz", bz2 = "bz2", gz = "gz" })[suffix] or "none"
+	end
 	local build_args = need("build_args")
 		assert(type(build_args) == "table" and #build_args > 0,
 			("qemu:img: image '%s': with.build_args is the command line of the throwaway VM " ..
@@ -548,13 +571,19 @@ local function cloud_init_build(with, ctx)
 	local sd = ctx.state_dir
 	local image_path = sd .. "/image"
 	local base_resized = sd .. "/base.img"
+	local base_extracted = sd .. "/base.extracted"
 	local iso_path = sd .. "/cloud-init.iso"
 	local serial_log = sd .. "/serial.log"
 	local stderr_log = sd .. "/qemu-stderr.log"
 
 	local changed = false
+	-- stage chaining: `upstream` links each stage's manifest to the previous
+	-- stage's; a re-run of any stage re-runs everything after it (images.md)
+	local upstream = "bootstrap"
 	local function stage(stage_name, manifest, run)
+		manifest.upstream = makac.sha256(upstream)
 		if M.stage(ctx, stage_name, manifest, run) then changed = true end
+		upstream = M.hash_spec(manifest, ("image '%s' stage '%s'"):format(name, stage_name))
 	end
 
 	-- stage 1: download — content-cached (two builds naming the same
@@ -567,20 +596,45 @@ local function cloud_init_build(with, ctx)
 	end
 	base_path = tostring(base_path)
 
-	-- stage 2: prepare — copy the base, resize, create the working overlay
-	-- (manifest: base content + img_size)
-	stage("2-prepare", { base = M.hash_file(base_path), img_size = img_size }, function()
+	-- stage 2: extract — turn a compressed download into a disk image
+	-- qemu-img can work with; an uncompressed base needs nothing, its
+	-- pristine base IS the (shared, never-mutated) download-cache entry.
+	local pristine = base_path
+	if compression ~= "none" then
+		pristine = base_extracted
+	end
+	stage("2-extract", { base = M.hash_file(base_path), compression = compression }, function()
+		if compression == "none" then return end
+		local dec = ({ xz = "xz -dc", bz2 = "bzip2 -dc", gz = "gzip -dc" })[compression]
+		os.remove(base_extracted)
+		-- via sh -c: the decompressor streams to a file — capturing its
+		-- stdout with makac.exec would buffer the whole image in memory.
+		ctx.exec({ "sh", "-c",
+			('%s "$1" > "$2.tmp" && mv -f -- "$2.tmp" "$2"'):format(dec),
+			"sh", base_path, base_extracted })
+	end)
+
+	-- stage 3: prepare — copy the pristine base, resize the copy, create the
+	-- working overlay. The backing format is PROBED, never assumed: an xz of
+	-- a raw image and a plain qcow2 both just work (images.md).
+	stage("3-prepare", { base = M.hash_file(pristine), img_size = img_size }, function()
+		local info = makac.json.loads(
+			ctx.exec({ "qemu-img", "info", "--output=json", pristine }).stdout)
+		if type(info) ~= "table" or type(info.format) ~= "string" or info.format == "" then
+			fail("image '%s': cannot determine the format of %s: 'qemu-img info --output=json' returned no 'format'", name, pristine)
+		end
+		local fmt = info.format
 		local ok2, err2 = pcall(function()
-			ctx.exec({ "cp", "--", base_path, base_resized })
-			ctx.exec({ "qemu-img", "resize", base_resized, img_size })
+			ctx.exec({ "cp", "--", pristine, base_resized })
+			ctx.exec({ "qemu-img", "resize", "-f", fmt, base_resized, img_size })
 			os.remove(image_path)
-			ctx.exec({ "qemu-img", "create", "-f", "qcow2", "-F", "qcow2",
+			ctx.exec({ "qemu-img", "create", "-f", "qcow2", "-F", fmt,
 				"-b", base_resized, image_path })
 		end)
 		if not ok2 then error(err2, 0) end
 	end)
 
-	-- stage 3: templates — render each entry with the env into the state
+	-- stage 4: templates — render each entry with the env into the state
 	-- dir (manifest: the env + each template's content)
 	local tmanifest = { env = M.hash_spec(ctx.env, ("image '%s'"):format(name)) }
 	for _, t in ipairs(templates) do
@@ -594,7 +648,7 @@ local function cloud_init_build(with, ctx)
 		end
 		tmanifest["template:" .. t.template] = M.hash_file(tpath)
 	end
-	stage("3-templates", tmanifest, function()
+	stage("4-templates", tmanifest, function()
 		for _, t in ipairs(templates) do
 			local tpath = t.template
 			if tpath:sub(1, 1) ~= "/" then
@@ -607,7 +661,7 @@ local function cloud_init_build(with, ctx)
 		end
 	end)
 
-	-- stage 4: iso — genisoimage from the rendered templates + `sources`
+	-- stage 5: iso — genisoimage from the rendered templates + `sources`
 	-- (manifest: the rendered files' content); sources are { url=, sha256=,
 	-- filename= } downloads grafted straight from the download cache
 	local imanifest = {}
@@ -633,7 +687,7 @@ local function cloud_init_build(with, ctx)
 		imanifest[s.filename] = s.sha256
 		grafts[#grafts + 1] = { name = s.filename, path = tostring(spath) }
 	end
-	stage("4-iso", imanifest, function()
+	stage("5-iso", imanifest, function()
 		local argv = { "genisoimage", "-output", iso_path, "-volid", "cidata",
 			"-joliet", "-input-charset", "utf-8", "-graft-points" }
 		for _, g in ipairs(grafts) do
@@ -643,7 +697,7 @@ local function cloud_init_build(with, ctx)
 		ctx.exec(argv)
 	end)
 
-	-- stage 5: customize — boot the throwaway VM, wait for it to power
+	-- stage 6: customize — boot the throwaway VM, wait for it to power
 	-- itself off (manifest: build_args + iso content). `{{ img_self }}`
 	-- and `{{ cloud_init_iso }}` substitute inside build_args; the serial
 	-- console and qemu stderr are captured to the state dir per contract.
@@ -654,7 +708,7 @@ local function cloud_init_build(with, ctx)
 			:gsub("{{%s*cloud_init_iso%s*}}", function() return iso_path end))
 	end
 	local vmanifest = { build_args = table.concat(words, "\n"), iso = M.hash_file(iso_path) }
-	stage("5-customize", vmanifest, function()
+	stage("6-customize", vmanifest, function()
 		os.remove(serial_log)
 		os.remove(stderr_log)
 		local argv = { qemu_bin }

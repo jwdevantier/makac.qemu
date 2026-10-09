@@ -42,9 +42,14 @@ against the manifest file stored in the state dir by the previous run.
 Match: the stage is skipped. Mismatch or missing: it runs and saves the new
 manifest.
 
-Concretely: editing a cloud-init template re-runs "render" and everything
-after it, but does not re-download the base image or re-run `qemu-img
-resize`.
+Stages are *chained*: every stage's manifest carries an `upstream` field —
+a digest of the previous stage's manifest. A re-run of any stage therefore
+shifts every later stage's manifest and forces it to re-run too. Editing a
+cloud-init template re-runs "templates" and everything after it, but does
+not re-download the base image or re-extract it. (Contents-only manifests
+had a hole: a re-run of prepare recreates the working overlay pristine, so
+a skipped customize stage would have left the artifact without its
+customization — chaining makes the cascade explicit instead.)
 
 ## The environment and `env_hook`
 
@@ -66,16 +71,18 @@ One stage: `qemu-img create` under a manifest of name/size/format.
 
 ## Builder `cloud-init`
 
-A customized OS image from a stock cloud image, in five stages:
+A customized OS image from a stock cloud image, in six stages:
 
 | stage       | does                                                            | manifest hashes             |
 |-------------|-----------------------------------------------------------------|-----------------------------|
 | 1. download | fetch base image (url + sha256) into the makac download cache   | url, sha256                 |
-| 2. prepare  | copy base to state dir, `qemu-img resize` to `img_size`, create | base content, img_size      |
-|             | the working overlay                                            |                             |
-| 3. templates| render each `templates` entry with the env into the state dir   | env, each template's content |
-| 4. iso      | `genisoimage -volid cidata ...` from rendered templates + `sources` | rendered files' content  |
-| 5. customize| boot a throwaway VM (image as disk, ISO as cdrom); wait for it  | build_args + iso content     |
+| 2. extract  | decompress the download when `compression` is set (else a       | download content,           |
+|             | no-op: the pristine base is the cache entry itself)             | compression                 |
+| 3. prepare  | probe the base's format, copy it, `qemu-img resize` the copy    | pristine content, img_size  |
+|             | to `img_size`, create the working overlay                      |                             |
+| 4. templates| render each `templates` entry with the env into the state dir   | env, each template's content |
+| 5. iso      | `genisoimage -volid cidata ...` from rendered templates + `sources` | rendered files' content  |
+| 6. customize| boot a throwaway VM (image as disk, ISO as cdrom); wait for it  | build_args + iso content     |
 |             | to power itself off                                            |                             |
 
 Required keys: `img_size`;
@@ -89,6 +96,32 @@ downloads grafted straight from the download cache into the ISO — and
 environment variable): stream the customize VM's serial console while it
 boots/installs/powers off.
 
+### The base image: checksum, compression, format
+
+`base_img.sha256` always pins the **downloaded bytes** — the file the URL
+serves — so the value can be copied straight from the publisher's checksum
+page (e.g. FreeBSD's `CHECKSUM.SHA256`, which hashes the `.xz`).
+Decompression is deterministic, so the verified download transitively pins
+the decompressed content; the hashes inside stage manifests are cache
+invalidation, not verification.
+
+The download may be compressed: `.xz`, `.bz2` and `.gz` suffixes are
+decompressed in stage 2 (via `xz -dc`, `bzip2 -dc`, `gzip -dc` — the tool
+is needed on `PATH` only when the URL uses it). Set
+`base_img.compression = "xz" | "bz2" | "gz" | "none"` explicitly when the
+URL has no telling suffix; the suffix is sniffed otherwise.
+
+The disk format of the (decompressed) base is never assumed: stage 3
+probes it with `qemu-img info --output=json` and uses the detected format
+for both the resize (`-f`) and the overlay's backing (`-F`). A raw `.xz`
+and a plain qcow2 both just work; a mis-detected still-compressed file
+fails the probe loudly. (`.img` is ambiguous by name — Ubuntu's `.img` is
+qcow2, FreeBSD's `.raw` is raw — probing settles it.)
+
+Resizing only enlarges the virtual disk; growing the guest's root
+filesystem onto it is the guest's own business (cloud-init's growpart,
+FreeBSD's growfs service) — or a `runcmd` line in user-data.
+
 ### Templates
 
 A template file renders with the env by one rule: `{{ name }}` in the file
@@ -99,7 +132,7 @@ it. No further template syntax.
 
 The throwaway VM obeys `timeout_s` (default 600). Inside `build_args`, two
 substitutions: `{{ img_self }}` (the working image) and
-`{{ cloud_init_iso }}` (the ISO of stage 4).
+`{{ cloud_init_iso }}` (the ISO of stage 5).
 
 The VM must power itself off: the cloud-init user-data ends with
 `poweroff:` (or issues the shutdown). Timeout is a stage failure quoting the
