@@ -3,47 +3,43 @@
 
 # Snapshots
 
-A **snapshot** is a VM's full live state — RAM and device state — *baked
-into its disk image* under a tag. This is QEMU's internal-snapshot
-mechanism: QMP `snapshot-save` / `snapshot-load` (`savevm`/`loadvm`), and
-`-loadvm <tag>` on the command line.
+A **snapshot** saves a running VM's state (RAM and devices) into its disk
+image under a tag. A VM can later start from that tag instead of booting.
+This uses QEMU's internal snapshots (`savevm`/`loadvm`).
 
-The shape this gives workflows: bring a VM to a known state, snapshot it,
-then boot VMs resuming *from the snapshot in the image* — skipping boot —
-use them, throw them away.
+Every writable disk must support internal snapshots. In practice that means
+qcow2, which includes the overlay disks `qemu:vm` creates. If a writable disk
+is raw or otherwise unsupported, the step fails, quoting QMP's error and
+naming the disk.
 
-**Requirement.** All writable block devices of the VM must support internal
-snapshots — in practice: qcow2, including the overlay disks `qemu:vm`
-creates. A VM with a raw or otherwise snapshot-uncapable writable device
-gets a step failure quoting QMP's error and naming the device.
-
-## Capturing: `qemu:savevm`
+## Capture: `qemu:savevm`
 
 ```lua
 local snap = step {
     name = "snapshot the VM",
     uses = "qemu:savevm",
     with = {
-        vm  = vm.out.handle,   -- handle or name; must be running
-        tag = "ready-state",   -- optional; default: timestamped tag
+        vm  = vm.out.handle,   -- handle or name; the VM must be running
+        tag = "ready-state",   -- optional; default: a timestamped tag
+        -- timeout_s = 300,    -- optional; how long to wait for the capture
     },
 }
 -- snap.out.snapshot == "ready-state"   (the tag)
 ```
 
-The guest is quiesced for the capture and keeps running after. The snapshot
-lives *in the image file*: it survives the VM dying and `makac` exiting,
-and travels with the image — copy the image, the snapshot comes along.
-Captures have a `timeout_s` (default 300).
+`qemu:savevm` pauses the guest while it captures, then lets it keep running.
+The snapshot survives the VM stopping and `makac` exiting, because it is
+written into the image file itself. The step waits for the capture to finish,
+up to `timeout_s` (default 300).
 
-## Resuming: `qemu:loadvm`
+## Resume: `qemu:loadvm`
 
 ```lua
 local vm2 = step {
     name = "resume vm",
     uses = "qemu:loadvm",
     with = {
-        name     = "testvm",
+        vm       = "testvm",            -- the VM name used on the save side
         qemu_bin = qemu_bin,
         args     = saved_args,          -- the machine config the snapshot was taken with
         snapshot = snap.out.snapshot,   -- required: the tag
@@ -53,27 +49,29 @@ local vm2 = step {
 }
 ```
 
-`qemu:loadvm` is `qemu:vm` with one additional input: `snapshot` makes the
-launch append `-loadvm <tag>`, so the guest resumes where it was captured
-rather than booting.
+`qemu:loadvm` is `qemu:vm` plus a required `snapshot` tag. It adds
+`-loadvm <tag>` to the launch, so the guest resumes instead of booting.
 
-- The caller supplies `args`. Resuming requires the machine configuration
-  the snapshot was taken with — the image records state, not configuration.
-  Control interfaces (pidfile, sockets, serial log) are exempt and may
-  differ freely.
-- The image holding the tag must be the one the VM's disks resolve to. For
-  an overlay-booted VM the snapshot lives in `.makac/qemu/<name>/disk.qcow2`
-  — so resume on the **same VM name** (same run dir), and `qemu:loadvm`
-  *keeps* the existing overlay rather than recreating it.
-- `state = "started"` on a running VM is idempotent, as with `qemu:vm`. The
-  canonical invocation includes the snapshot tag, so "same VM, new tag" is a
-  different invocation and must be spelled `state = "restarted"`.
-- A tag not present in the image fails at launch — QEMU exits, and the step
-  failure quotes the qemu-stderr log.
+Three things to get right:
 
-## Housekeeping
+- **Resume on the same VM name.** The snapshot is stored in the VM's disk
+  image, so the VM's disks must resolve to the image it was saved in. For an
+  overlay-booted VM that is `.makac/qemu/<name>/disk.qcow2`. `qemu:loadvm`
+  keeps the existing overlay instead of recreating it.
+- **Pass the machine configuration in `args`.** A snapshot stores guest
+  state, not the QEMU command line, so the package cannot recover it. The
+  `args` are part of the invocation identity and must match byte for byte.
+- **A different tag is a different invocation.** To resume a running VM from
+  another tag, use `state = "restarted"`. With `state = "started"`, a
+  mismatch fails the step instead of silently relaunching the VM.
 
-Deleting a snapshot is a QMP command through the existing surface:
+A tag that is not in the image fails at launch: QEMU exits, and the step
+failure quotes the qemu-stderr log.
+
+## Delete: `qemu:qmp/send`
+
+There is no dedicated action. Send the QMP command through the existing
+surface:
 
 ```lua
 step {
@@ -90,13 +88,7 @@ step {
 
 ## The boot-once, test-many loop
 
-The canonical use — see [the NVMe test loop](../examples/nvme-test.md):
-
-1. build an image, boot it once,
-2. `qemu:savevm` a `"base"` tag,
-3. stop the VM,
-4. for each test: `qemu:loadvm` from `"base"` (seconds, not minutes),
-   run the test, `qemu:vm state = "stopped"`.
-
-Each test starts at a known, deterministic machine state — no re-boot, no
-re-provisioning.
+Build an image and boot it once. Save a `"base"` snapshot, then stop the VM.
+For each test, resume from `"base"`, run the test, and stop the VM again.
+Every test starts from the same machine state, and resuming takes seconds
+instead of a full boot. See [the NVMe test loop](../examples/nvme-test.md).

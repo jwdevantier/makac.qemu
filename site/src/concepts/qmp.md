@@ -3,22 +3,29 @@
 
 # QMP
 
-QMP is QEMU's control protocol: JSON over a unix socket — the socket every
-`qemu:vm` VM opens at `.makac/qemu/<name>/qmp.socket`. The package surfaces
-it as three actions and a library, and a workflow writes and reads **Lua
-tables throughout** — the JSON wire format is not part of its surface.
+QMP is QEMU's control protocol. It exchanges JSON messages: mostly
+request/response, with asynchronous events on occasion. The package provides
+three actions for sending commands and handling events, plus helpers for
+constructing valid QMP commands. You work in Lua tables; the JSON wire
+format is not exposed.
 
-## The connection model
+## Connections and events
 
-A started VM has exactly one QMP connection, opened by `qemu:vm` as part of
-starting it and held until the handle is closed (stop succeeding, or the
-run ending). All qmp actions against the VM share it; commands and polls
-serialize on it in step order. A run that *attaches* to an already-running
-VM by name opens its connection at attach time.
+Each VM has one QMP connection per run. `qemu:vm` opens it when it starts the
+VM; a run that attaches to a running VM opens it on its first QMP step. Every
+QMP step against the VM shares that connection and runs in step order.
 
-Events reach the buffer only while connected: anything QEMU emitted between
-runs, or before the run attached, is never received. To observe an event,
-arrange to poll *after* the step that raises it.
+Events arrive only while the connection exists. Anything QEMU emitted between
+runs, or before the run attached, is not delivered. To catch an event, poll
+after the step that raises it.
+
+Events collect in a per-VM buffer, and the three actions move it:
+
+| action             | effect on the buffer                                                             |
+| ------------------ | -------------------------------------------------------------------------------- |
+| `qemu:qmp/send`    | clears it when it issues its commands, then buffers events that arrive in flight |
+| `qemu:qmp/poll`    | drains the socket and returns the whole buffer; the events stay in place         |
+| `qemu:qmp/consume` | removes the oldest `n`                                                           |
 
 ## `qemu:qmp/send`
 
@@ -45,49 +52,42 @@ local res = step {
 ```
 
 - Each command is `{ execute = "<qmp command>", arguments = {...}? }`.
-  `arguments` nests freely; key names pass verbatim — QMP keys like
+  `arguments` nests freely; key names pass verbatim. QMP keys like
   `node-name` need bracket syntax but otherwise just work.
 - A QMP error reply yields `error = { class =, desc = }`. `on_error =
   "fail"` aborts the step at the first failure (remaining commands are not
   sent); `"collect"` runs them all and carries failures in
   `out.results[i].error`.
-- Sending **discards the event buffer** — a new command declares that
-  events before it are not of interest. Events arriving while the command
-  is in flight are buffered and observed with `poll`.
 
 ## `qemu:qmp/poll` and `qemu:qmp/consume`
 
-Alongside command replies, the connection receives asynchronous events
-(`DEVICE_DELETED`, `RESET`, ...). They accumulate in a per-VM buffer, and
-two actions manage them:
+`poll` reads QEMU's asynchronous events (`DEVICE_DELETED`, `RESET`, ...).
+`consume` discards events you have handled. Use them together: poll to see
+what happened, act on it, then consume so later polls do not return it again.
+
+`poll` returns the VM's buffered events in `out.events`, oldest first.
+`timeout_s` bounds how long it waits and defaults to 0, which returns
+immediately; pass a `timeout_s` when you are waiting for an event.
 
 ```lua
 local p = step {
     uses = "qemu:qmp/poll",
-    with = { vm = vm.out.handle, timeout_s = 5 },   -- listen up to 5s; default 0
+    with = { vm = vm.out.handle, timeout_s = 5 },
 }
 -- p.out.events == { { name = "DEVICE_DELETED", data = {...} }, ... }
 ```
 
+`poll` does not remove anything. After handling events, call `consume` with
+how many to discard, counting from the oldest.
+
 ```lua
 step {
     uses = "qemu:qmp/consume",
-    with = { vm = vm.out.handle, n = #p.out.events },  -- discard the n oldest
+    with = { vm = vm.out.handle, n = #p.out.events },   -- everything polled
 }
 ```
 
-The discipline:
-
-- `poll` drains the socket (bounded by `timeout_s`; a timeout is **not** an
-  error — it returns with what arrived). `out.events` is the VM's **pending
-  events** — the whole buffer after the drain, including events that arrived
-  while an earlier `send` awaited its replies. They **remain in the buffer**:
-  what a poll shows is exactly what a matching `consume(n)` discards.
-- `consume` discards the `n` oldest buffered events — the ones the workflow
-  has finished treating (it knows their count from a poll).
-- `send` discards the buffer at the moment it issues its commands.
-
-The typical pattern — raise a condition, then witness it:
+The full pattern: raise a condition, poll for its event, consume it.
 
 ```lua
 step {
@@ -102,13 +102,11 @@ step { uses = "qemu:qmp/consume",
        with = { vm = vm.out.handle, n = #p.out.events } }
 ```
 
-## The library
+## QMP helpers
 
-`require("pkgs/qemu/qmp")` constructs command tables. **It performs no I/O**
-— there is no socket, no target VM, no sending. Constructors map arguments
-to a `{ execute = ..., arguments = ... }` table, which a workflow passes to
-`qemu:qmp/send` — the only place commands are sent, and the only place a VM
-is named:
+`require("pkgs/qemu/qmp")` provides helpers for building QMP commands and
+reading replies. Constructors return a `{ execute = ..., arguments = ... }`
+table, which you submit with `qemu:qmp/send`, the step that names the VM:
 
 ```lua
 local qmp = require("pkgs/qemu/qmp")
@@ -125,38 +123,33 @@ step {
 }
 ```
 
-Constructors:
+Command constructors:
 
-| constructor | builds |
-| --- | --- |
-| `qmp.dev_add(driver, args)` | `device_add` with `driver` injected |
+| constructor                        | builds                                            |
+| ---------------------------------- | ------------------------------------------------- |
+| `qmp.dev_add(driver, args)`        | `device_add` with `driver` injected               |
 | `qmp.bdev_add(node, driver, args)` | `blockdev-add` with `node-name`/`driver` injected |
-| `qmp.hmp("savevm mysnapshot")` | `human-monitor-command` |
-| `qmp.query_status()` | `query-status` |
-| `qmp.merge(tables)` | a fresh shallow merge of the tables (later sources win) |
-| `qmp.ok(result)` | `result.error == nil` |
-| `qmp.err_desc(result)` | the error description |
+| `qmp.hmp("savevm mysnapshot")`     | `human-monitor-command`                           |
+| `qmp.query_status()`               | `query-status`                                    |
 
-Because they are pure table-builders they compose with ordinary Lua
-(merging, loops, conditionals), and the same command table can be sent to
-any number of VMs by any number of `qemu:qmp/send` steps. The `merge` the
-constructors are built on is exposed too, for compositions that reuse it
-for their own option tables.
+The other helpers do not build commands:
+
+- `qmp.merge(tables)` shallow-merges an array of tables into a fresh one.
+  Later sources win; the sources are not mutated.
+- `qmp.ok(result)` is true when `result.error == nil`.
+- `qmp.err_desc(result)` returns a failed command's error description.
 
 ## Hotplug notes
 
-Two QEMU facts worth stating:
-
 - **`addr` is a string.** To give a device a deterministic PCI BDF, pass
-  `addr` explicitly — and as a string (`addr = "0.0"`), never a number. The
-  guest then finds the device at a known address, pollable over ssh
-  (`lspci -nn`).
+  `addr` explicitly, as a string (`addr = "0.0"`), never a number. The guest
+  then finds the device at a known address, pollable over ssh (`lspci -nn`).
 - **Q35 cannot hotplug PCIe root ports.** The buses devices attach to must
   exist from boot: pre-create them in the VM's `args` (`pcie-root-port`
   devices with ids) and hotplug onto those buses. Snapshotting after boot
   freezes this topology into base state, so every resumed VM has the ports
   ready.
 
-Waiting for a *guest-side* condition is expressed with polls from steps:
+Waiting for a guest-side condition is expressed with polls from steps:
 `poll`/`consume` when there's a QMP event; a ssh shell loop or
 `serial.wait_for` when the evidence is inside the guest.
