@@ -11,7 +11,10 @@
 -- `<state_dir>/manifests/<slot>`; a stage runs when its manifest differs
 -- from (or misses) the stored one, and the stored manifest is updated only
 -- AFTER the stage succeeded — a failed run re-runs next time. `with.force`
--- bypasses all manifest checks.
+-- bypasses all manifest checks. Every manifest also carries a reserved
+-- `$builder` key naming the builder, so two *different* builders sharing a
+-- with.name cannot reuse each other's artifact just because their manifest
+-- tables coincide.
 --
 -- Manifest inputs are structured (task 25): img.hash_spec(v) canonicalizes
 -- a spec value (sorted keys — stable across runs; the format is private);
@@ -56,6 +59,7 @@
 ---@field state_dir string
 ---@field env table<string, any>
 ---@field force boolean
+---@field builder string
 ---@field exec fun(argv: string[]): RunResult
 ---@field stage fun(stage_name: string, manifest: table, run: fun(ctx: QemuBuildCtx))
 ---@field _stages_used? integer
@@ -126,6 +130,24 @@ end
 
 local function manifest_path(state_dir, slot)
 	return state_dir .. "/manifests/" .. slot
+end
+
+-- Every manifest carries a reserved `$builder` key naming the builder that
+-- produced it. The artifact (state_dir/image) is shared by every step that
+-- uses the same with.name, so without this two *different* builders whose
+-- manifest tables happen to coincide would each reuse the other's artifact.
+-- The value is the registered *name* — a label, not a hash of the code: a
+-- changed implementation under an unchanged name still hits the cache
+-- (bump the name — or a value in the manifest — to invalidate). The
+-- inline-function route (with.builder as a function) has no name and gets
+-- a sentinel; two inline builders cannot be told apart.
+local BUILDER_KEY = "$builder"
+
+-- builder_identity(with): the registered builder name, or the sentinel for
+-- the inline-function route.
+local function builder_identity(with)
+	if type(with.builder) == "string" then return with.builder end
+	return "<inline>"
 end
 
 -- canonical_value / M.hash_spec: structured spec inputs (images.md,
@@ -221,6 +243,7 @@ function M.stage(ctx, stage_name, manifest, run)
 	assert(type(stage_name) == "string" and stage_name ~= "" and not stage_name:find("/", 1, true),
 		"qemu:img stage: the stage name must be a simple non-empty word")
 	ctx._stages_used = (ctx._stages_used or 0) + 1
+	if ctx.builder ~= nil then manifest[BUILDER_KEY] = ctx.builder end
 	local text = serialize_manifest(manifest,
 		("image '%s' stage '%s'"):format(ctx.name, stage_name))
 	local path = manifest_path(ctx.state_dir, stage_name)
@@ -347,6 +370,7 @@ function M.build(with)
 		state_dir = state_dir,
 		env = assemble_env(with),
 		force = with.force == true,
+		builder = builder_identity(with),
 		exec = make_exec(with.name),
 	}
 	-- ctx.stage: the per-stage cache, available without an extra require so
@@ -364,6 +388,7 @@ function M.build(with)
 		local manifest = manifest_fn(with, ctx)
 		assert(type(manifest) == "table",
 			("qemu:img: image '%s': the manifest function must return a table"):format(with.name))
+		manifest[BUILDER_KEY] = ctx.builder
 		local text = serialize_manifest(manifest, ("image '%s'"):format(with.name))
 		if not ctx.force
 			and makac.fs.read_file(manifest_path(state_dir, "build")) == text
