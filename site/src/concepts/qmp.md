@@ -5,9 +5,9 @@
 
 QMP is QEMU's control protocol. It exchanges JSON messages: mostly
 request/response, with asynchronous events on occasion. The package provides
-three actions for sending commands and handling events, plus helpers for
-constructing valid QMP commands. You work in Lua tables; the JSON wire
-format is not exposed.
+three actions for sending commands and handling events, plus
+[helpers](../api/qmp.md) for constructing QMP commands. You work in Lua
+tables; the JSON wire format is not exposed.
 
 ## Connections and events
 
@@ -101,55 +101,3 @@ assert(p.out.events[1].name == "DEVICE_DELETED")
 step { uses = "qemu:qmp/consume",
        with = { vm = vm.out.handle, n = #p.out.events } }
 ```
-
-## QMP helpers
-
-`require("pkgs/qemu/qmp")` provides helpers for building QMP commands and
-reading replies. Constructors return a `{ execute = ..., arguments = ... }`
-table, which you submit with `qemu:qmp/send`, the step that names the VM:
-
-```lua
-local qmp = require("pkgs/qemu/qmp")
-
-step {
-    uses = "qemu:qmp/send",
-    with = {
-        vm = vm.out.handle,
-        commands = {
-            qmp.dev_add("nvme", { id = "nvme-ctrl.2", serial = "test" }),
-            qmp.bdev_add("bdev.test", "raw", { file = { driver = "file", filename = "x.img" } }),
-        },
-    },
-}
-```
-
-Command constructors:
-
-| constructor                        | builds                                            |
-| ---------------------------------- | ------------------------------------------------- |
-| `qmp.dev_add(driver, args)`        | `device_add` with `driver` injected               |
-| `qmp.bdev_add(node, driver, args)` | `blockdev-add` with `node-name`/`driver` injected |
-| `qmp.hmp("savevm mysnapshot")`     | `human-monitor-command`                           |
-| `qmp.query_status()`               | `query-status`                                    |
-
-The other helpers do not build commands:
-
-- `qmp.merge(tables)` shallow-merges an array of tables into a fresh one.
-  Later sources win; the sources are not mutated.
-- `qmp.ok(result)` is true when `result.error == nil`.
-- `qmp.err_desc(result)` returns a failed command's error description.
-
-## Hotplug notes
-
-- **`addr` is a string.** To give a device a deterministic PCI BDF, pass
-  `addr` explicitly, as a string (`addr = "0.0"`), never a number. The guest
-  then finds the device at a known address, pollable over ssh (`lspci -nn`).
-- **Q35 cannot hotplug PCIe root ports.** The buses devices attach to must
-  exist from boot: pre-create them in the VM's `args` (`pcie-root-port`
-  devices with ids) and hotplug onto those buses. Snapshotting after boot
-  freezes this topology into base state, so every resumed VM has the ports
-  ready.
-
-Waiting for a guest-side condition is expressed with polls from steps:
-`poll`/`consume` when there's a QMP event; a ssh shell loop or
-`serial.wait_for` when the evidence is inside the guest.
