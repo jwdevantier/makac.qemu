@@ -117,9 +117,12 @@ error naming the conflicting word.
    * *different invocation* — spec failure. Changing a running VM's command
      line is spelled `state = "restarted"`.
 3. Otherwise launch QEMU, detached, stdout/stderr redirected to the log
-   files. The QEMU process is not a child makac waits on. A launch that
-   exits immediately (bad args, missing image) is a step failure quoting the
-   qemu-stderr log.
+   files. The QEMU process is not a child makac waits on. `qemu_bin` is
+   resolved on `$PATH` (or taken as a path) before the overlay is created,
+   so a missing binary is a spec failure naming it — a detached child that
+   could not be exec'd would otherwise only surface as exit 127 with an
+   empty stderr log. A launch that exits immediately (bad args, missing
+   image) is a step failure quoting the qemu-stderr log.
 4. Open the VM's QMP connection on `<run_dir>/qmp.socket` and attach it to
    the handle — this is the connection every qmp action against the VM will
    use (qmp.md, handle.md). A socket that never appears within a short

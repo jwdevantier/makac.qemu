@@ -307,6 +307,19 @@ end
 
 --- Builder resolution ------------------------------------------------------
 
+-- find_executable(bin) -> resolved path|nil: a bare name is looked up on
+-- $PATH, a path is checked directly; `command -v` covers both and verifies
+-- the executable bit. The customize VM is spawned, not exec'd in-process, so
+-- a missing qemu_bin would otherwise surface only as the child exiting 127
+-- (with empty logs) after the download/extract/prepare work is done.
+local function find_executable(bin)
+	local ok, res = pcall(makac.exec, { "sh", "-c", 'command -v "$1"', "sh", bin })
+	if not ok or res.code ~= 0 then return nil end
+	local path = (res.stdout or ""):gsub("%s+$", "")
+	if path == "" then return nil end
+	return path
+end
+
 -- with.builder: a registered name OR a function (images.md, "`with.builder`:
 -- a name or a function"); a function pairs with with.builder_manifest.
 local function resolve_builder(with)
@@ -543,6 +556,11 @@ local function cloud_init_build(with, ctx)
 	local qemu_bin = need("qemu_bin")
 		assert(type(qemu_bin) == "string" and qemu_bin ~= "",
 			("qemu:img: image '%s': with.qemu_bin must name the qemu binary"):format(name))
+	if find_executable(qemu_bin) == nil then
+		fail("image '%s': with.qemu_bin %q is not executable (not found on $PATH) — " ..
+			"install QEMU or point with.qemu_bin at the qemu-system binary; " ..
+			"the customize stage boots it", name, qemu_bin)
+	end
 	local base_img = need("base_img")
 		assert(type(base_img) == "table"
 			and type(base_img.url) == "string" and base_img.url ~= ""
@@ -774,9 +792,13 @@ local function cloud_init_build(with, ctx)
 			local st = proc:status()
 			if st ~= "running" then
 				if st.code ~= 0 then
-					fail("image '%s': the customize VM exited abnormally (code %d) — the VM must " ..
+					local hint = st.code == 127
+						and (("\nwith.qemu_bin %q could not be executed (exit 127: command not found)")
+							:format(qemu_bin))
+						or ""
+					fail("image '%s': the customize VM exited abnormally (code %d)%s — the VM must " ..
 						"power itself off (cloud-init user-data ends with `poweroff:`)\n%s",
-						name, st.code, quote_logs())
+						name, st.code, hint, quote_logs())
 				end
 				break
 			end

@@ -90,6 +90,9 @@ Required keys: `img_size`;
 the throwaway VM, flattened exactly as `qemu:vm`'s `args`);
 `base_img = { url =, sha256 = }`; `templates = { { template = <file>,
 output = <name in ISO> }, ... }` — at minimum user-data and meta-data.
+`qemu_bin` is resolved on `$PATH` (or taken as a path) before the first
+stage runs: a missing binary is a spec failure naming it, not a customize
+VM that exits 127 after the download/extract/prepare work.
 Optional: `sources = { { url =, sha256 =, filename = }, ... }` — extra
 downloads grafted straight from the download cache into the ISO — and
 `timeout_s` (default 600) plus `verbose` (or the `MAKAC_IMG_VERBOSE`

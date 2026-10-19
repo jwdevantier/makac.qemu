@@ -41,6 +41,18 @@ local function vm_arg(action, with)
 	return handlelib.resolve(ident, with.run_dir)
 end
 
+-- find_executable(bin) -> resolved path|nil: a bare name is looked up on
+-- $PATH, a path is checked directly; `command -v` covers both and verifies
+-- the executable bit. The launch execs qemu in a detached child, so a
+-- missing binary would otherwise surface only as the child exiting 127.
+local function find_executable(bin)
+	local ok, res = pcall(makac.exec, { "sh", "-c", 'command -v "$1"', "sh", bin })
+	if not ok or res.code ~= 0 then return nil end
+	local path = (res.stdout or ""):gsub("%s+$", "")
+	if path == "" then return nil end
+	return path
+end
+
 -- tail(path, n): the last n lines of a log file, for failure messages —
 -- a shell-out to tail(1) via makac.exec (launch.md), not a primitive.
 local function tail(path, n)
@@ -384,6 +396,15 @@ local function start(action, h, qemu_bin, words, canonical, ssh, disk, with, kee
 		return { changed = false, out = out }
 	end
 
+	-- A launch execs qemu in a detached child, so a missing binary would not
+	-- raise in the parent: it would show up as the child exiting 127 (with an
+	-- empty stderr log) after the overlay work. Check first, with a message
+	-- that names the cause.
+	if find_executable(qemu_bin) == nil then
+		fail(action, "VM '%s': with.qemu_bin %q is not executable (not found on $PATH) — " ..
+			"install QEMU or point with.qemu_bin at the qemu-system binary", h.name, qemu_bin)
+	end
+
 	-- vm.md, "Overlay boot disks": the fresh overlay is created per start,
 	-- BEFORE launch (a failed qemu-img never leaves a half-booted VM) —
 	-- EXCEPT a loadvm launch: it keeps the existing overlay, snapshots
@@ -441,8 +462,12 @@ local function start(action, h, qemu_bin, words, canonical, ssh, disk, with, kee
 		local pst = p:status()
 		if pst ~= "running" then
 			local how = type(pst) == "table" and ("exit " .. tostring(pst.code)) or tostring(pst)
-			fail(action, "VM '%s': qemu exited during launch (%s) — stderr log %s:\n%s",
-				h.name, how, h.qemu_stderr, tail(h.qemu_stderr, 40))
+			local hint = type(pst) == "table" and pst.code == 127
+				and ((" — with.qemu_bin %q could not be executed (exit 127: command not found)")
+					:format(qemu_bin))
+				or ""
+			fail(action, "VM '%s': qemu exited during launch (%s)%s — stderr log %s:\n%s",
+				h.name, how, hint, h.qemu_stderr, tail(h.qemu_stderr, 40))
 		end
 		if makac.fs.stat(h.qmp_socket) ~= nil then
 			-- the socket exists before QEMU accepts on it: retry briefly
