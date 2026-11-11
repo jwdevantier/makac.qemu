@@ -64,10 +64,11 @@
 ---@field stage fun(stage_name: string, manifest: table, run: fun(ctx: QemuBuildCtx))
 ---@field _stages_used? integer
 ---@field _stages_ran? integer
+---@field key? string identity of the last stage's manifest (including its upstream chain)
 
 ---@class QemuImgResult
 ---@field changed boolean
----@field out { path: string }
+---@field out { path: string, key?: string }
 
 ---@class QemuImgLib
 local M = {}
@@ -246,6 +247,10 @@ function M.stage(ctx, stage_name, manifest, run)
 	if ctx.builder ~= nil then manifest[BUILDER_KEY] = ctx.builder end
 	local text = serialize_manifest(manifest,
 		("image '%s' stage '%s'"):format(ctx.name, stage_name))
+	-- The latest stage's manifest summarizes the whole stage chain (builders
+	-- put the previous stage's digest in `upstream`). Expose its digest even
+	-- when the stage is cached so callers can key derived artifacts on it.
+	ctx.key = makac.sha256(text)
 	local path = manifest_path(ctx.state_dir, stage_name)
 	if not ctx.force and makac.fs.read_file(path) == text then
 		return false -- manifest match: skipped (images.md, "Caching")
@@ -358,9 +363,12 @@ local function absolute(p)
 	return tostring(makac.fs.path(p))
 end
 
--- build(with) -> { changed, out = { path = ... } }: the qemu:img action
--- (images.md). Every builder returns out = { path = <abs path to the
--- image> } and changed = true iff any stage ran.
+-- build(with) -> { changed, out = { path = ..., key = ...? } }: the
+-- qemu:img action (images.md). out.path is the absolute artifact path.
+-- out.key identifies the recipe that produced it: the final stage manifest
+-- digest for staged builders, otherwise the builder-level manifest digest.
+-- It is a cache/recipe identity, NOT a hash of the image bytes. Builders
+-- without manifests or stages have no stable key and return nil.
 local defaulted_changed -- defined below
 ---@param with QemuImgSpec
 ---@return QemuImgResult
@@ -403,20 +411,23 @@ function M.build(with)
 			("qemu:img: image '%s': the manifest function must return a table"):format(with.name))
 		manifest[BUILDER_KEY] = ctx.builder
 		local text = serialize_manifest(manifest, ("image '%s'"):format(with.name))
+		local key = makac.sha256(text)
 		if not ctx.force
 			and makac.fs.read_file(manifest_path(state_dir, "build")) == text
 			and makac.fs.stat(expect_path) ~= nil then
-			return { changed = false, out = { path = expect_path } }
+			return { changed = false, out = { path = expect_path, key = key } }
 		end
 		local result, changed = M.run_build(with, build_fn, ctx)
 		makac.fs.write_file(manifest_path(state_dir, "build"), text, { atomic = true })
-		return { changed = defaulted_changed(ctx, changed), out = { path = result } }
+		return { changed = defaulted_changed(ctx, changed),
+			out = { path = result, key = ctx.key or key } }
 	end
 
 	-- no manifest: runs every time (images.md); a builder that does its
 	-- own per-stage caching reports through result.changed.
 	local result, changed = M.run_build(with, build_fn, ctx)
-	return { changed = defaulted_changed(ctx, changed), out = { path = result } }
+	return { changed = defaulted_changed(ctx, changed),
+		out = { path = result, key = ctx.key } }
 end
 
 -- defaulted_changed: when a builder doesn't self-report changed, fall

@@ -14,6 +14,7 @@ local img = step {
   },
 }
 -- img.out.path == "/abs/.../.makac/qemu/img/fedora-base/image"
+-- img.out.key  == "<sha256 of the recipe identity>"
 ```
 
 `qemu:img` dispatches on `with.builder`: it looks the builder up and hands
@@ -31,8 +32,18 @@ it the `with` table plus a per-image state dir. Built-in builders: `raw`,
 | `env_hook`  | optional; `function(env) -> env` (below)                    |
 | `force`     | optional; bypass the manifest cache and rebuild            |
 
-Every builder returns `out = { path = <abs path to the image> }` and
-`changed = true` iff any stage ran.
+Every builder returns `out.path`, the absolute path to the image, and
+`changed = true` iff any stage ran. Cached builders also return `out.key`:
+a digest of the recipe identity that produced the artifact. For a staged
+builder this is the final stage's manifest digest, including its `upstream`
+chain; for a builder with only a builder-level manifest it is that
+manifest's digest. A builder with neither stages nor a manifest has no
+stable key.
+
+`out.key` lets callers invalidate artifacts derived from an image (for
+example, a saved VM state) whenever any image input changes. It is a recipe
+identity, **not a content hash of the image bytes**: a non-deterministic
+builder can produce different bytes under the same key.
 
 ## Caching
 
@@ -43,8 +54,10 @@ Match: the stage is skipped. Mismatch or missing: it runs and saves the new
 manifest.
 
 Stages are *chained*: every stage's manifest carries an `upstream` field —
-a digest of the previous stage's manifest. A re-run of any stage therefore
-shifts every later stage's manifest and forces it to re-run too. Editing a
+a digest of the previous stage's manifest. The last stage's digest is
+reported as `out.key`, including on a fully cached build. A re-run of any
+stage therefore shifts every later stage's manifest and forces it to re-run
+too. Editing a
 cloud-init template re-runs "templates" and everything after it, but does
 not re-download the base image or re-extract it. (Contents-only manifests
 had a hole: a re-run of prepare recreates the working overlay pristine, so
